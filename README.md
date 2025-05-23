@@ -1,10 +1,10 @@
 # PayMyBuddy
-## Modèle Physique de Données
+## Physical Data Model
 
-Le modèle physique de données ci-dessous représente la structure de la base de données utilisée par l'application PayMyBuddy.
+The physical data model below represents the database structure used by the PayMyBuddy application.
 
 ```mermaid
-MDP
+erDiagram
     USER {
         long id PK
         string email
@@ -57,30 +57,30 @@ MDP
         boolean processed
     }
     
-    USER ||--o{ BANK_ACCOUNT : possède
-    USER ||--o{ CONNECTION : est_propriétaire
-    USER ||--o{ CONNECTION : est_ami
-    USER ||--o{ TRANSACTION : envoie
-    USER ||--o{ TRANSACTION : reçoit
-    USER ||--o{ BANK_TRANSFER : effectue
-    BANK_ACCOUNT ||--o{ BANK_TRANSFER : concerne
-    TRANSACTION ||--o{ BILLING : génère
+    USER ||--o{ BANK_ACCOUNT : owns
+    USER ||--o{ CONNECTION : is_owner
+    USER ||--o{ CONNECTION : is_friend
+    USER ||--o{ TRANSACTION : sends
+    USER ||--o{ TRANSACTION : receives
+    USER ||--o{ BANK_TRANSFER : makes
+    BANK_ACCOUNT ||--o{ BANK_TRANSFER : relates_to
+    TRANSACTION ||--o{ BILLING : generates
 ```
 
-### Description des tables
+### Table Descriptions
 
-- **USER**: Stocke les informations des utilisateurs inscrits sur la plateforme.
-- **BANK_ACCOUNT**: Contient les informations des comptes bancaires reliés aux utilisateurs.
-- **CONNECTION**: Représente les relations entre utilisateurs (amis/contacts).
-- **TRANSACTION**: Enregistre toutes les transactions effectuées entre utilisateurs.
-- **BANK_TRANSFER**: Trace les transferts d'argent entre les comptes bancaires des utilisateurs et l'application.
-- **BILLING**: Gère la facturation liée aux transactions effectuées sur la plateforme.
+- **USER**: Stores information about users registered on the platform.
+- **BANK_ACCOUNT**: Contains information about bank accounts linked to users.
+- **CONNECTION**: Represents relationships between users (friends/contacts).
+- **TRANSACTION**: Records all transactions made between users.
+- **BANK_TRANSFER**: Tracks money transfers between users' bank accounts and the application.
+- **BILLING**: Manages billing related to transactions made on the platform.
 
-### Relations principales
+### Main Relationships
 
-- Un utilisateur peut avoir plusieurs comptes bancaires
-- Un utilisateur peut avoir plusieurs connexions avec d'autres utilisateurs
-- Un utilisateur peut effectuer/recevoir plusieurs transactions
-- Un utilisateur peut réaliser plusieurs transferts bancaires
-- Chaque transfert bancaire est lié à un compte bancaire spécifique
-- Chaque transaction peut générer une ou plusieurs facturations
+- A user can have multiple bank accounts
+- A user can have multiple connections with other users
+- A user can send/receive multiple transactions
+- A user can make multiple bank transfers
+- Each bank transfer is linked to a specific bank account
+- Each transaction can generate one or more billings
