@@ -30,4 +30,15 @@ public class Billing {
 
     @Column(nullable = false)
     private Boolean processed = false;
+
+    @Column(name = "fee_percentage", nullable = false)
+    private BigDecimal feePercentage;
+
+    @Column(nullable = false)
+    private String description;
+
+    // Méthode utilitaire pour calculer les frais basés sur un montant et un pourcentage
+    public static BigDecimal calculateFee(BigDecimal amount, BigDecimal feePercentage) {
+        return amount.multiply(feePercentage.divide(new BigDecimal("100")));
+    }
 }

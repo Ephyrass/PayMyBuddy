@@ -17,9 +17,9 @@ public class Connection {
 
     @ManyToOne
     @JoinColumn(name = "owner_id", nullable = false)
-    private User owner;
+    private UserAccount owner;
 
     @ManyToOne
     @JoinColumn(name = "friend_id", nullable = false)
-    private User friend;
+    private UserAccount friend;
 }

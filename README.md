@@ -5,29 +5,19 @@ The physical data model below represents the database structure used by the PayM
 
 ```mermaid
 erDiagram
-    USER {
+    USER_ACCOUNT {
         long id PK
         string email
         string password
         string firstName
         string lastName
         decimal balance
-        datetime createdDate
-    }
-    
-    BANK_ACCOUNT {
-        long id PK
-        long user_id FK
-        string accountName
-        string iban
-        datetime createdDate
     }
     
     CONNECTION {
         long id PK
         long owner_id FK
         long friend_id FK
-        datetime createdDate
     }
     
     TRANSACTION {
@@ -40,47 +30,32 @@ erDiagram
         datetime date
     }
     
-    BANK_TRANSFER {
-        long id PK
-        long user_id FK
-        long bank_account_id FK
-        decimal amount
-        string type
-        datetime date
-    }
-    
     BILLING {
         long id PK
         long transaction_id FK
         decimal amount
         datetime date
         boolean processed
+        decimal feePercentage
+        string description
     }
     
-    USER ||--o{ BANK_ACCOUNT : owns
-    USER ||--o{ CONNECTION : is_owner
-    USER ||--o{ CONNECTION : is_friend
-    USER ||--o{ TRANSACTION : sends
-    USER ||--o{ TRANSACTION : receives
-    USER ||--o{ BANK_TRANSFER : makes
-    BANK_ACCOUNT ||--o{ BANK_TRANSFER : relates_to
+    USER_ACCOUNT ||--o{ CONNECTION : is_owner
+    USER_ACCOUNT ||--o{ CONNECTION : is_friend
+    USER_ACCOUNT ||--o{ TRANSACTION : sends
+    USER_ACCOUNT ||--o{ TRANSACTION : receives
     TRANSACTION ||--o{ BILLING : generates
 ```
 
 ### Table Descriptions
 
-- **USER**: Stores information about users registered on the platform.
-- **BANK_ACCOUNT**: Contains information about bank accounts linked to users.
+- **USER_ACCOUNT**: Stores information about users registered on the platform.
 - **CONNECTION**: Represents relationships between users (friends/contacts).
 - **TRANSACTION**: Records all transactions made between users.
-- **BANK_TRANSFER**: Tracks money transfers between users' bank accounts and the application.
 - **BILLING**: Manages billing related to transactions made on the platform.
 
 ### Main Relationships
 
-- A user can have multiple bank accounts
 - A user can have multiple connections with other users
 - A user can send/receive multiple transactions
-- A user can make multiple bank transfers
-- Each bank transfer is linked to a specific bank account
 - Each transaction can generate one or more billings

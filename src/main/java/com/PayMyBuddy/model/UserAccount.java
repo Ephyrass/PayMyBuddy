@@ -6,7 +6,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -14,7 +13,7 @@ import java.util.Set;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class User {
+public class UserAccount {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -34,9 +33,6 @@ public class User {
 
     @Column(nullable = false)
     private BigDecimal balance = BigDecimal.ZERO;
-
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
-    private Set<BankAccount> bankAccounts = new HashSet<>();
 
     @OneToMany(mappedBy = "owner")
     private Set<Connection> connections = new HashSet<>();
