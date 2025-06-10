@@ -1,0 +1,11 @@
+###
+PUT http://localhost:8080/api/users/7
+Content-Type: application/json
+Authorization: Basic bm91dmVhdS51dGlsaXNhdGV1ckBleGFtcGxlLmNvbTptb3REZVBhc3NlMTIz
+
+{
+  "email": "utilisateur.modifie@example.com",
+  "firstName": "Prénom",
+  "lastName": "Modifié",
+  "password": "nouveauMotDePasse123"
+}

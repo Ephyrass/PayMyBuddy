@@ -4,6 +4,7 @@ import com.PayMyBuddy.model.UserAccount;
 import com.PayMyBuddy.repository.UserAccountRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -14,10 +15,12 @@ import java.util.Optional;
 public class UserAccountService {
 
     private final UserAccountRepository userAccountRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Autowired
-    public UserAccountService(UserAccountRepository userAccountRepository) {
+    public UserAccountService(UserAccountRepository userAccountRepository, PasswordEncoder passwordEncoder) {
         this.userAccountRepository = userAccountRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     public List<UserAccount> findAll() {
@@ -34,6 +37,10 @@ public class UserAccountService {
 
     @Transactional
     public UserAccount save(UserAccount userAccount) {
+        // Si le mot de passe n'est pas déjà crypté (par exemple lors d'une mise à jour)
+        if (userAccount.getPassword() != null && !userAccount.getPassword().startsWith("$2a$")) {
+            userAccount.setPassword(passwordEncoder.encode(userAccount.getPassword()));
+        }
         return userAccountRepository.save(userAccount);
     }
 
@@ -47,6 +54,9 @@ public class UserAccountService {
         if (userAccount.getBalance() == null) {
             userAccount.setBalance(BigDecimal.ZERO);
         }
+
+        // Crypter le mot de passe avant de sauvegarder l'utilisateur
+        userAccount.setPassword(passwordEncoder.encode(userAccount.getPassword()));
 
         return userAccountRepository.save(userAccount);
     }
@@ -71,4 +81,3 @@ public class UserAccountService {
         user.setBalance(newBalance);
         return userAccountRepository.save(user);
     }
-}
