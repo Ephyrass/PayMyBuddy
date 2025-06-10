@@ -81,3 +81,4 @@ public class UserAccountService {
         user.setBalance(newBalance);
         return userAccountRepository.save(user);
     }
+}
