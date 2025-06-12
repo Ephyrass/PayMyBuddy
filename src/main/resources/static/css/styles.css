@@ -1,0 +1,308 @@
+/* Styles personnalisés pour Pay My Buddy */
+
+/* Couleurs principales */
+:root {
+    --primary-color: #1976d2;
+    --secondary-color: #64b5f6;
+    --accent-color: #2196f3;
+    --success-color: #4caf50;
+    --danger-color: #f44336;
+    --warning-color: #ff9800;
+    --light-gray: #f8f9fa;
+    --dark-gray: #343a40;
+    --text-color: #212121;
+    --text-muted: #757575;
+    --border-radius: 12px;
+    --card-shadow: 0 6px 15px rgba(0, 0, 0, 0.08);
+}
+
+body {
+    padding-bottom: 70px;
+    background-color: #f5f8fe;
+    color: var(--text-color);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+}
+
+/* Personnalisation de la navigation */
+.navbar {
+    background: linear-gradient(to right, var(--primary-color), var(--secondary-color)) !important;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+    padding: 12px 0;
+}
+
+.navbar-brand {
+    font-size: 1.5rem;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+}
+
+.navbar-brand::before {
+    content: "€";
+    font-size: 1.8rem;
+    margin-right: 8px;
+    background-color: white;
+    color: var(--primary-color);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.nav-link {
+    font-weight: 500;
+    padding: 8px 16px !important;
+    transition: all 0.3s ease;
+    border-radius: 20px;
+    margin: 0 4px;
+}
+
+.nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+/* Personnalisation des cartes */
+.card {
+    border: none;
+    border-radius: var(--border-radius);
+    box-shadow: var(--card-shadow);
+    margin-bottom: 25px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    overflow: hidden;
+}
+
+.card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 20px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+    background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+    border-radius: var(--border-radius) var(--border-radius) 0 0 !important;
+    color: white;
+    font-weight: 600;
+    padding: 16px 20px;
+    border: none;
+}
+
+.card-body {
+    padding: 20px;
+}
+
+/* Personnalisation des boutons */
+.btn {
+    border-radius: 25px;
+    padding: 10px 20px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 5px;
+    height: 5px;
+    background: rgba(255, 255, 255, 0.5);
+    opacity: 0;
+    border-radius: 100%;
+    transform: scale(1, 1) translate(-50%, -50%);
+    transform-origin: 50% 50%;
+}
+
+.btn:focus:not(:active)::after {
+    animation: ripple 1s ease-out;
+}
+
+.btn-primary {
+    background: linear-gradient(to right, var(--primary-color), var(--accent-color));
+    border: none;
+    box-shadow: 0 4px 6px rgba(25, 118, 210, 0.25);
+}
+
+.btn-primary:hover {
+    background: linear-gradient(to right, var(--accent-color), var(--primary-color));
+    box-shadow: 0 5px 15px rgba(25, 118, 210, 0.35);
+    transform: translateY(-2px);
+}
+
+.btn-outline-primary {
+    color: var(--primary-color);
+    border: 2px solid var(--primary-color);
+    background: transparent;
+}
+
+.btn-outline-primary:hover {
+    background: var(--primary-color);
+    color: white;
+    box-shadow: 0 5px 15px rgba(25, 118, 210, 0.25);
+    transform: translateY(-2px);
+}
+
+/* Style pour le footer */
+.footer {
+    background-color: white;
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+    padding: 15px 0;
+    z-index: 1000;
+}
+
+.footer .text-muted {
+    color: var(--text-muted) !important;
+    font-weight: 500;
+}
+
+/* Styles pour les montants */
+.text-success {
+    color: var(--success-color) !important;
+    font-weight: 600;
+}
+
+.text-danger {
+    color: var(--danger-color) !important;
+    font-weight: 600;
+}
+
+/* Styles pour les tableaux */
+.table {
+    background-color: white;
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    box-shadow: var(--card-shadow);
+}
+
+.table thead th {
+    background: linear-gradient(to right, var(--primary-color), rgba(100, 181, 246, 0.8));
+    color: white;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 1px;
+    padding: 14px;
+    border: none;
+}
+
+.table tbody tr {
+    transition: all 0.2s ease;
+}
+
+.table tbody tr:hover {
+    background-color: rgba(33, 150, 243, 0.05);
+}
+
+.table td {
+    padding: 16px;
+    border-color: #e3f2fd;
+    vertical-align: middle;
+}
+
+/* Style pour les formulaires */
+.form-control, .form-select {
+    border-radius: var(--border-radius);
+    padding: 12px 15px;
+    border: 1px solid #e0e0e0;
+    transition: all 0.3s ease;
+    background-color: #f9fafc;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.25rem rgba(25, 118, 210, 0.25);
+    background-color: white;
+}
+
+.form-label {
+    font-weight: 500;
+    margin-bottom: 8px;
+    color: var(--text-color);
+}
+
+/* Styles pour les alertes */
+.alert {
+    border: none;
+    border-radius: var(--border-radius);
+    padding: 16px 20px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+}
+
+.alert-success {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+}
+
+.alert-danger {
+    background-color: #ffebee;
+    color: #c62828;
+}
+
+/* Animation pour l'effet ripple sur les boutons */
+@keyframes ripple {
+    0% {
+        transform: scale(0, 0);
+        opacity: 1;
+    }
+    20% {
+        transform: scale(25, 25);
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+        transform: scale(40, 40);
+    }
+}
+
+/* Container personnalisé avec plus d'espace pour les grands écrans */
+@media (min-width: 1200px) {
+    .container {
+        max-width: 1140px;
+        padding: 0 20px;
+    }
+}
+
+/* Adaptations pour les appareils mobiles */
+@media (max-width: 768px) {
+    .container {
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+
+    .table thead {
+        display: none;
+    }
+
+    .table, .table tbody, .table tr, .table td {
+        display: block;
+        width: 100%;
+    }
+
+    .table tr {
+        margin-bottom: 20px;
+        border-radius: var(--border-radius);
+        box-shadow: var(--card-shadow);
+    }
+
+    .table td {
+        text-align: right;
+        position: relative;
+        padding-left: 50%;
+    }
+
+    .table td::before {
+        content: attr(data-label);
+        position: absolute;
+        left: 15px;
+        font-weight: bold;
+        text-align: left;
+    }
+}

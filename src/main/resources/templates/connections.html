@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="layout :: head('Mes Contacts')">
+</head>
+<body>
+    <nav th:replace="layout :: nav"></nav>
+
+    <div class="container mt-5">
+        <div class="row mb-4 align-items-center">
+            <div class="col-md-8">
+                <h2 class="fw-bold"><i class="fas fa-users me-2"></i>Mes Contacts</h2>
+                <p class="text-muted">Gérez vos contacts pour effectuer des transferts d'argent rapidement</p>
+            </div>
+            <div class="col-md-4 text-end">
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addContactModal">
+                    <i class="fas fa-plus me-2"></i> Ajouter un contact
+                </button>
+            </div>
+        </div>
+
+        <!-- Messages de succès et d'erreur -->
+        <div class="row mb-3" th:if="${param.success}">
+            <div class="col-md-12">
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="fas fa-check-circle me-2"></i> Contact ajouté avec succès !
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-3" th:if="${param.success_delete}">
+            <div class="col-md-12">
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="fas fa-check-circle me-2"></i> Contact supprimé avec succès.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-3" th:if="${param.error}">
+            <div class="col-md-12">
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    <span th:if="${param.error[0] == 'self_connection'}">Vous ne pouvez pas vous ajouter vous-même comme contact.</span>
+                    <span th:unless="${param.error[0] == 'self_connection'}" th:text="${param.error[0]}">Erreur</span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header d-flex align-items-center">
+                        <i class="fas fa-address-book me-2"></i>
+                        <h4 class="mb-0">Liste des contacts</h4>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th><i class="far fa-user me-1"></i> Nom</th>
+                                        <th><i class="far fa-envelope me-1"></i> Email</th>
+                                        <th><i class="fas fa-cog me-1"></i> Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="connection : ${connections}">
+                                        <td data-label="Nom">
+                                            <div class="d-flex align-items-center">
+                                                <span class="avatar-circle me-3" th:style="'background-color: ' + ${#strings.arraySplit('1976d2,4caf50,f44336,ff9800,9c27b0,795548', ',')[connection.friend.id % 6]} + ';'">
+                                                    <span th:text="${connection.friend.firstName.substring(0,1)}">A</span>
+                                                </span>
+                                                <span th:text="${connection.friend.firstName + ' ' + connection.friend.lastName}">Nom Prénom</span>
+                                            </div>
+                                        </td>
+                                        <td data-label="Email">
+                                            <span th:text="${connection.friend.email}">email@example.com</span>
+                                        </td>
+                                        <td data-label="Actions">
+                                            <a th:href="@{/transactions(contactId=${connection.friend.id})}" class="btn btn-sm btn-outline-primary me-1">
+                                                <i class="fas fa-paper-plane me-1"></i> Envoyer
+                                            </a>
+                                            <button type="button" class="btn btn-sm btn-outline-danger"
+                                                    data-bs-toggle="modal"
+                                                    th:data-bs-target="'#deleteContactModal-' + ${connection.id}">
+                                                <i class="fas fa-trash-alt me-1"></i> Supprimer
+                                            </button>
+
+                                            <!-- Modal de confirmation pour la suppression -->
+                                            <div class="modal fade" th:id="'deleteContactModal-' + ${connection.id}" tabindex="-1" aria-hidden="true">
+                                                <div class="modal-dialog modal-dialog-centered">
+                                                    <div class="modal-content">
+                                                        <div class="modal-header bg-light">
+                                                            <h5 class="modal-title">
+                                                                <i class="fas fa-exclamation-triangle text-danger me-2"></i>
+                                                                Confirmation
+                                                            </h5>
+                                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                        </div>
+                                                        <div class="modal-body">
+                                                            <p>Êtes-vous sûr de vouloir supprimer le contact avec
+                                                                <strong th:text="${connection.friend.firstName + ' ' + connection.friend.lastName}">Nom Prénom</strong> ?</p>
+                                                            <p class="text-muted small">Cette action est irréversible.</p>
+                                                        </div>
+                                                        <div class="modal-footer">
+                                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                                                            <form th:action="@{/connections/delete/{id}(id=${connection.id})}" method="post" style="display: inline;">
+                                                                <button type="submit" class="btn btn-danger">
+                                                                    <i class="fas fa-trash-alt me-1"></i> Supprimer
+                                                                </button>
+                                                            </form>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr th:if="${connections.empty}">
+                                        <td colspan="3" class="text-center py-5">
+                                            <div class="py-4 text-muted">
+                                                <i class="fas fa-users fa-3x mb-3"></i>
+                                                <h5>Vous n'avez pas encore de contacts</h5>
+                                                <p>Ajoutez des amis pour commencer à transférer de l'argent !</p>
+                                                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addContactModal">
+                                                    <i class="fas fa-plus me-1"></i> Ajouter un contact
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Ajouter un contact -->
+    <div class="modal fade" id="addContactModal" tabindex="-1" aria-labelledby="addContactModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form th:action="@{/connections/add}" method="post" id="addContactForm">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="addContactModalLabel">
+                            <i class="fas fa-user-plus me-2 text-primary"></i> Ajouter un contact
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="contactEmail" class="form-label">Email du contact</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light">
+                                    <i class="fas fa-envelope text-primary"></i>
+                                </span>
+                                <input type="email" class="form-control" id="contactEmail" name="email" placeholder="exemple@email.com" required>
+                            </div>
+                            <div class="form-text mt-2">
+                                <i class="fas fa-info-circle me-1"></i> Entrez l'adresse email de votre contact déjà inscrit sur Pay My Buddy.
+                            </div>
+                            <div class="invalid-feedback" id="emailError">
+                                <i class="fas fa-exclamation-circle me-1"></i> Vous ne pouvez pas vous ajouter vous-même comme contact.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                            <i class="fas fa-times me-1"></i> Annuler
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-plus me-1"></i> Ajouter
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .avatar-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+            text-transform: uppercase;
+        }
+    </style>
+
+    <footer th:replace="layout :: footer"></footer>
+
+    <!-- Script pour vérifier l'email du contact -->
+    <script th:inline="javascript">
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentUserEmail = /*[[${user.email}]]*/ '';
+            const addContactForm = document.getElementById('addContactForm');
+            const contactEmail = document.getElementById('contactEmail');
+            const emailError = document.getElementById('emailError');
+
+            addContactForm.addEventListener('submit', function(e) {
+                if (contactEmail.value === currentUserEmail) {
+                    e.preventDefault();
+                    contactEmail.classList.add('is-invalid');
+                    return false;
+                }
+                return true;
+            });
+
+            contactEmail.addEventListener('input', function() {
+                if (contactEmail.value === currentUserEmail) {
+                    contactEmail.classList.add('is-invalid');
+                } else {
+                    contactEmail.classList.remove('is-invalid');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

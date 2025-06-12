@@ -88,4 +88,5 @@ public class ConnectionService {
             throw new IllegalArgumentException("La connexion n'existe pas");
         }
     }
+
 }

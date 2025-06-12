@@ -11,7 +11,6 @@ erDiagram
         string password
         string firstName
         string lastName
-        decimal balance
     }
     
     CONNECTION {

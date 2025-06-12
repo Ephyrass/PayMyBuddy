@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="layout :: head('Tableau de bord')">
+</head>
+<body>
+    <nav th:replace="layout :: nav"></nav>
+
+    <div class="container mt-5">
+        <div class="row mb-4 align-items-center">
+            <div class="col-md-8">
+                <h2 class="fw-bold">Bienvenue, <span class="text-primary" th:text="${user.firstName}">Prénom</span> !</h2>
+                <p class="text-muted">Votre porte-monnaie digital pour des transferts d'argent faciles</p>
+            </div>
+            <div class="col-md-4 text-end">
+                <span th:text="${#temporals.format(#temporals.createNow(), 'EEEE d MMMM yyyy')}" class="badge bg-light text-dark p-2 rounded-pill">
+                    <i class="far fa-calendar-alt me-1"></i> Jeudi 12 Juin 2025
+                </span>
+            </div>
+        </div>
+
+        <!-- Messages d'erreur -->
+        <div class="row mb-3" th:if="${param.error}">
+            <div class="col-md-12">
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    <span th:text="${param.error[0]}">Une erreur est survenue</span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-md-6 mb-3 mb-md-0">
+                <div class="card h-100">
+                    <div class="card-header d-flex align-items-center">
+                        <i class="fas fa-bolt me-2"></i>
+                        <h4 class="mb-0">Actions rapides</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-3">
+                            <a th:href="@{/transactions}" class="btn btn-primary btn-lg">
+                                <i class="fas fa-paper-plane me-2"></i> Envoyer de l'argent
+                            </a>
+                            <a th:href="@{/connections}" class="btn btn-outline-primary btn-lg">
+                                <i class="fas fa-user-friends me-2"></i> Gérer vos contacts
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-header d-flex align-items-center">
+                        <i class="fas fa-chart-line me-2"></i>
+                        <h4 class="mb-0">Vue d'ensemble</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-6 mb-3">
+                                <div class="p-3 rounded bg-light">
+                                    <div class="fs-1 text-primary">
+                                        <i class="fas fa-users"></i>
+                                    </div>
+                                    <h5 class="mt-2 mb-0" th:text="${connections.size()}">0</h5>
+                                    <p class="text-muted mb-0">Contacts</p>
+                                </div>
+                            </div>
+                            <div class="col-6 mb-3">
+                                <div class="p-3 rounded bg-light">
+                                    <div class="fs-1 text-primary">
+                                        <i class="fas fa-exchange-alt"></i>
+                                    </div>
+                                    <h5 class="mt-2 mb-0" th:text="${transactions.size()}">0</h5>
+                                    <p class="text-muted mb-0">Transactions</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-history me-2"></i>
+                            <h4 class="mb-0">Transactions récentes</h4>
+                        </div>
+                        <a th:href="@{/transactions}" class="btn btn-sm btn-outline-light">
+                            <i class="fas fa-eye me-1"></i> Voir tout
+                        </a>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th><i class="far fa-calendar me-1"></i> Date</th>
+                                        <th><i class="fas fa-info-circle me-1"></i> Description</th>
+                                        <th><i class="far fa-user me-1"></i> Contact</th>
+                                        <th><i class="fas fa-euro-sign me-1"></i> Montant</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="transaction : ${transactions}" th:if="${transactionStat.index < 5}">
+                                        <td data-label="Date" th:text="${#temporals.format(transaction.date, 'dd/MM/yyyy')}">01/01/2025</td>
+                                        <td data-label="Description" th:text="${transaction.description ?: 'Sans description'}">Description</td>
+                                        <td data-label="Contact">
+                                            <span class="d-flex align-items-center">
+                                                <span class="avatar-circle me-2" th:style="'background-color:' + ${transaction.receiver.id == user.id ? '#4caf50' : '#1976d2'} + ';'">
+                                                    <span th:text="${transaction.receiver.id == user.id ? transaction.sender.firstName.substring(0,1) : transaction.receiver.firstName.substring(0,1)}">A</span>
+                                                </span>
+                                                <span th:text="${transaction.receiver.id == user.id ? transaction.sender.firstName + ' ' + transaction.sender.lastName : transaction.receiver.firstName + ' ' + transaction.receiver.lastName}">Contact</span>
+                                            </span>
+                                        </td>
+                                        <td data-label="Montant" th:class="${transaction.receiver.id == user.id ? 'text-success' : 'text-danger'}"
+                                            th:text="${transaction.receiver.id == user.id ? '+' : '-'} + ${#numbers.formatDecimal(transaction.amount, 0, 'COMMA', 2, 'POINT')} + ' €'">
+                                            €0.00
+                                        </td>
+                                    </tr>
+                                    <tr th:if="${transactions.empty}">
+                                        <td colspan="4" class="text-center py-5">
+                                            <div class="text-muted">
+                                                <i class="fas fa-receipt fa-3x mb-3"></i>
+                                                <h5>Aucune transaction récente</h5>
+                                                <p>Vos transactions apparaîtront ici une fois que vous commencerez à envoyer ou recevoir de l'argent.</p>
+                                                <a th:href="@{/transactions}" class="btn btn-sm btn-primary">
+                                                    <i class="fas fa-paper-plane me-1"></i> Faire un transfert
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .avatar-circle {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+    </style>
+
+    <footer th:replace="layout :: footer"></footer>
+</body>
+</html>

@@ -7,7 +7,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -50,11 +49,6 @@ public class UserAccountService {
             throw new IllegalArgumentException("Un utilisateur avec cette adresse e-mail existe déjà");
         }
 
-        // Initialiser le solde à zéro si non défini
-        if (userAccount.getBalance() == null) {
-            userAccount.setBalance(BigDecimal.ZERO);
-        }
-
         // Crypter le mot de passe avant de sauvegarder l'utilisateur
         userAccount.setPassword(passwordEncoder.encode(userAccount.getPassword()));
 
@@ -64,21 +58,5 @@ public class UserAccountService {
     @Transactional
     public void delete(Long id) {
         userAccountRepository.deleteById(id);
-    }
-
-    @Transactional
-    public UserAccount updateBalance(Long userId, BigDecimal amount) {
-        UserAccount user = userAccountRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("Utilisateur non trouvé"));
-
-        BigDecimal newBalance = user.getBalance().add(amount);
-
-        // Vérifier que le solde ne devient pas négatif
-        if (newBalance.compareTo(BigDecimal.ZERO) < 0) {
-            throw new IllegalArgumentException("Solde insuffisant pour cette opération");
-        }
-
-        user.setBalance(newBalance);
-        return userAccountRepository.save(user);
     }
 }

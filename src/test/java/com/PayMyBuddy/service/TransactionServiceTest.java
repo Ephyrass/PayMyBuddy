@@ -1,6 +1,5 @@
 package com.PayMyBuddy.service;
 
-import com.PayMyBuddy.model.Connection;
 import com.PayMyBuddy.model.Transaction;
 import com.PayMyBuddy.model.UserAccount;
 import com.PayMyBuddy.repository.BillingRepository;
@@ -59,7 +58,6 @@ class TransactionServiceTest {
         sender.setFirstName("John");
         sender.setLastName("Sender");
         sender.setPassword("password");
-        sender.setBalance(new BigDecimal("1000.00"));
 
         // Création d'un destinataire avec solde de 500
         receiver = new UserAccount();
@@ -68,7 +66,6 @@ class TransactionServiceTest {
         receiver.setFirstName("Jane");
         receiver.setLastName("Receiver");
         receiver.setPassword("password");
-        receiver.setBalance(new BigDecimal("500.00"));
 
         // Création d'une transaction de test
         testTransaction = new Transaction();
@@ -125,8 +122,7 @@ class TransactionServiceTest {
 
         // Assert
         assertEquals(testTransaction, result);
-        assertEquals(new BigDecimal("899.50"), sender.getBalance()); // 1000 - 100 - 0.5 (frais)
-        assertEquals(new BigDecimal("600.00"), receiver.getBalance()); // 500 + 100
+
 
         verify(userAccountRepository).findById(1L);
         verify(userAccountRepository).findById(2L);
@@ -140,7 +136,6 @@ class TransactionServiceTest {
     @Test
     void makeTransaction_withInsufficientFunds_shouldThrowException() {
         // Arrange
-        sender.setBalance(new BigDecimal("50.00")); // Solde insuffisant
 
         when(userAccountRepository.findById(1L)).thenReturn(Optional.of(sender));
         when(userAccountRepository.findById(2L)).thenReturn(Optional.of(receiver));
@@ -181,69 +176,6 @@ class TransactionServiceTest {
         verify(userAccountRepository).findById(1L);
         verify(userAccountRepository).findById(2L);
         verify(connectionRepository).existsByOwnerAndFriend(sender, receiver);
-        verify(userAccountRepository, never()).save(any(UserAccount.class));
-        verify(transactionRepository, never()).save(any(Transaction.class));
-    }
-
-    @Test
-    void depositFunds_withValidAmount_shouldIncreaseBalance() {
-        // Arrange
-        when(userAccountRepository.findById(1L)).thenReturn(Optional.of(sender));
-        when(userAccountRepository.save(any(UserAccount.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        when(transactionRepository.save(any(Transaction.class))).thenReturn(testTransaction);
-
-        BigDecimal initialBalance = sender.getBalance();
-        BigDecimal depositAmount = new BigDecimal("200.00");
-
-        // Act
-        Transaction result = transactionService.depositFunds(1L, depositAmount, "Test deposit");
-
-        // Assert
-        assertEquals(testTransaction, result);
-        assertEquals(initialBalance.add(depositAmount), sender.getBalance());
-
-        verify(userAccountRepository).findById(1L);
-        verify(userAccountRepository).save(sender);
-        verify(transactionRepository).save(any(Transaction.class));
-    }
-
-    @Test
-    void withdrawFunds_withValidAmount_shouldDecreaseBalance() {
-        // Arrange
-        when(userAccountRepository.findById(1L)).thenReturn(Optional.of(sender));
-        when(userAccountRepository.save(any(UserAccount.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        when(transactionRepository.save(any(Transaction.class))).thenReturn(testTransaction);
-
-        BigDecimal initialBalance = sender.getBalance();
-        BigDecimal withdrawAmount = new BigDecimal("200.00");
-
-        // Act
-        Transaction result = transactionService.withdrawFunds(1L, withdrawAmount, "Test withdrawal");
-
-        // Assert
-        assertEquals(testTransaction, result);
-        assertEquals(initialBalance.subtract(withdrawAmount), sender.getBalance());
-
-        verify(userAccountRepository).findById(1L);
-        verify(userAccountRepository).save(sender);
-        verify(transactionRepository).save(any(Transaction.class));
-    }
-
-    @Test
-    void withdrawFunds_withInsufficientFunds_shouldThrowException() {
-        // Arrange
-        when(userAccountRepository.findById(1L)).thenReturn(Optional.of(sender));
-
-        BigDecimal withdrawAmount = new BigDecimal("1200.00"); // Plus que le solde disponible
-
-        // Act & Assert
-        Exception exception = assertThrows(IllegalArgumentException.class, () -> {
-            transactionService.withdrawFunds(1L, withdrawAmount, "Test withdrawal");
-        });
-
-        assertEquals("Solde insuffisant pour ce retrait", exception.getMessage());
-
-        verify(userAccountRepository).findById(1L);
         verify(userAccountRepository, never()).save(any(UserAccount.class));
         verify(transactionRepository, never()).save(any(Transaction.class));
     }

@@ -5,7 +5,6 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -30,9 +29,6 @@ public class UserAccount {
 
     @Column(nullable = false)
     private String lastName;
-
-    @Column(nullable = false)
-    private BigDecimal balance = BigDecimal.ZERO;
 
     @OneToMany(mappedBy = "owner")
     private Set<Connection> connections = new HashSet<>();

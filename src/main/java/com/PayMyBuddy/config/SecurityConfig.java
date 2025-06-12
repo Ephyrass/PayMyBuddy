@@ -45,12 +45,19 @@ public class SecurityConfig {
         http
             .csrf(AbstractHttpConfigurer::disable) // Désactiver CSRF pour simplifier les tests API
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/users/register", "/api/login").permitAll() // Endpoints publics
+                .requestMatchers("/", "/api/users/register", "/api/login", "/login", "/register", "/css/**", "/js/**").permitAll() // Endpoints et ressources publics
                 .anyRequest().authenticated() // Toutes les autres requêtes nécessitent une authentification
             )
             .authenticationProvider(authenticationProvider())
-            .httpBasic(); // Utiliser l'authentification HTTP Basic
-
+            .formLogin(form -> form
+                .loginPage("/login")
+                .defaultSuccessUrl("/dashboard", true)
+                .permitAll()
+            )
+            .logout(logout -> logout
+                .logoutSuccessUrl("/login?logout")
+                .permitAll()
+            );
         return http.build();
     }
 }

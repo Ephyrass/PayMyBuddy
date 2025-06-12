@@ -37,7 +37,6 @@ class UserAccountServiceTest {
         testUser.setFirstName("Test");
         testUser.setLastName("User");
         testUser.setPassword("password");
-        testUser.setBalance(new BigDecimal("100.00"));
     }
 
     @Test
@@ -124,37 +123,7 @@ class UserAccountServiceTest {
         verify(userAccountRepository, never()).save(any(UserAccount.class));
     }
 
-    @Test
-    void updateBalance_withSufficientFunds_shouldUpdateBalance() {
-        // Arrange
-        when(userAccountRepository.findById(1L)).thenReturn(Optional.of(testUser));
-        when(userAccountRepository.save(any(UserAccount.class))).thenReturn(testUser);
 
-        BigDecimal amount = new BigDecimal("-50.00");
 
-        // Act
-        UserAccount updatedUser = userAccountService.updateBalance(1L, amount);
 
-        // Assert
-        assertEquals(new BigDecimal("50.00"), updatedUser.getBalance());
-        verify(userAccountRepository).findById(1L);
-        verify(userAccountRepository).save(testUser);
-    }
-
-    @Test
-    void updateBalance_withInsufficientFunds_shouldThrowException() {
-        // Arrange
-        when(userAccountRepository.findById(1L)).thenReturn(Optional.of(testUser));
-
-        BigDecimal amount = new BigDecimal("-150.00");
-
-        // Act & Assert
-        Exception exception = assertThrows(IllegalArgumentException.class, () -> {
-            userAccountService.updateBalance(1L, amount);
-        });
-
-        assertEquals("Solde insuffisant pour cette opération", exception.getMessage());
-        verify(userAccountRepository).findById(1L);
-        verify(userAccountRepository, never()).save(any(UserAccount.class));
-    }
 }

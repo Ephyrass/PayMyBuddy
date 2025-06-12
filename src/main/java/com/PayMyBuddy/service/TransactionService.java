@@ -81,21 +81,8 @@ public class TransactionService {
 
         // Calculer les frais
         BigDecimal fee = Billing.calculateFee(amount, feePercentage);
-        BigDecimal totalAmount = amount.add(fee);
 
-        // Vérifier que l'expéditeur a assez de fonds
-        if (sender.getBalance().compareTo(totalAmount) < 0) {
-            throw new IllegalArgumentException("Solde insuffisant pour cette transaction");
-        }
-
-        // Mettre à jour les soldes
-        sender.setBalance(sender.getBalance().subtract(totalAmount));
-        receiver.setBalance(receiver.getBalance().add(amount));
-
-        userAccountRepository.save(sender);
-        userAccountRepository.save(receiver);
-
-        // Créer la transaction
+        // Créer la transaction (sans modification des soldes)
         Transaction transaction = new Transaction();
         transaction.setSender(sender);
         transaction.setReceiver(receiver);
@@ -118,55 +105,5 @@ public class TransactionService {
         billingRepository.save(billing);
 
         return savedTransaction;
-    }
-
-    @Transactional
-    public Transaction depositFunds(Long userId, BigDecimal amount, String description) {
-        if (amount.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("Le montant doit être supérieur à zéro");
-        }
-
-        UserAccount user = userAccountRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("Utilisateur non trouvé"));
-
-        user.setBalance(user.getBalance().add(amount));
-        userAccountRepository.save(user);
-
-        Transaction transaction = new Transaction();
-        transaction.setReceiver(user);
-        transaction.setSender(user); // Pour un dépôt, on peut considérer que l'utilisateur est aussi l'expéditeur
-        transaction.setAmount(amount);
-        transaction.setDescription("Dépôt: " + description);
-        transaction.setDate(LocalDateTime.now());
-        transaction.setFee(BigDecimal.ZERO); // Pas de frais pour un dépôt
-
-        return transactionRepository.save(transaction);
-    }
-
-    @Transactional
-    public Transaction withdrawFunds(Long userId, BigDecimal amount, String description) {
-        if (amount.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("Le montant doit être supérieur à zéro");
-        }
-
-        UserAccount user = userAccountRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("Utilisateur non trouvé"));
-
-        if (user.getBalance().compareTo(amount) < 0) {
-            throw new IllegalArgumentException("Solde insuffisant pour ce retrait");
-        }
-
-        user.setBalance(user.getBalance().subtract(amount));
-        userAccountRepository.save(user);
-
-        Transaction transaction = new Transaction();
-        transaction.setSender(user);
-        transaction.setReceiver(user); // Pour un retrait, on peut considérer que l'utilisateur est aussi le destinataire
-        transaction.setAmount(amount);
-        transaction.setDescription("Retrait: " + description);
-        transaction.setDate(LocalDateTime.now());
-        transaction.setFee(BigDecimal.ZERO); // On pourrait appliquer des frais pour un retrait si nécessaire
-
-        return transactionRepository.save(transaction);
     }
 }

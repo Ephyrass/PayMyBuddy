@@ -90,43 +90,4 @@ public class TransactionController {
         }
     }
 
-    @PostMapping("/deposit")
-    public ResponseEntity<?> depositFunds(@RequestBody Map<String, Object> payload) {
-        try {
-            Long userId = Long.valueOf(payload.get("userId").toString());
-            BigDecimal amount = new BigDecimal(payload.get("amount").toString());
-            String description = (String) payload.get("description");
-
-            if (amount.compareTo(BigDecimal.ZERO) <= 0) {
-                return ResponseEntity.badRequest().body("Le montant doit être supérieur à zéro");
-            }
-
-            Transaction transaction = transactionService.depositFunds(userId, amount, description);
-            return ResponseEntity.status(HttpStatus.CREATED).body(transaction);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Une erreur est survenue: " + e.getMessage());
-        }
-    }
-
-    @PostMapping("/withdraw")
-    public ResponseEntity<?> withdrawFunds(@RequestBody Map<String, Object> payload) {
-        try {
-            Long userId = Long.valueOf(payload.get("userId").toString());
-            BigDecimal amount = new BigDecimal(payload.get("amount").toString());
-            String description = (String) payload.get("description");
-
-            if (amount.compareTo(BigDecimal.ZERO) <= 0) {
-                return ResponseEntity.badRequest().body("Le montant doit être supérieur à zéro");
-            }
-
-            Transaction transaction = transactionService.withdrawFunds(userId, amount, description);
-            return ResponseEntity.status(HttpStatus.CREATED).body(transaction);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Une erreur est survenue: " + e.getMessage());
-        }
-    }
 }

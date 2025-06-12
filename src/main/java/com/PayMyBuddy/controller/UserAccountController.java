@@ -56,29 +56,6 @@ public class UserAccountController {
         }
     }
 
-    @PostMapping("/{id}/deposit")
-    public ResponseEntity<?> depositFunds(@PathVariable Long id, @RequestBody Map<String, Object> payload) {
-        try {
-            BigDecimal amount = new BigDecimal(payload.get("amount").toString());
-            return ResponseEntity.ok(userAccountService.updateBalance(id, amount));
-        } catch (IllegalArgumentException e) {
-            Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("error", e.getMessage());
-            return ResponseEntity.badRequest().body(errorResponse);
-        }
-    }
-
-    @PostMapping("/{id}/withdraw")
-    public ResponseEntity<?> withdrawFunds(@PathVariable Long id, @RequestBody Map<String, Object> payload) {
-        try {
-            BigDecimal amount = new BigDecimal(payload.get("amount").toString()).negate(); // Négation pour retrait
-            return ResponseEntity.ok(userAccountService.updateBalance(id, amount));
-        } catch (IllegalArgumentException e) {
-            Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("error", e.getMessage());
-            return ResponseEntity.badRequest().body(errorResponse);
-        }
-    }
 
     @PutMapping("/{id}")
     public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody UserAccount user) {

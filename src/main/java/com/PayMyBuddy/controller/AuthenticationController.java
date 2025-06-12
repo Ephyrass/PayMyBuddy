@@ -55,7 +55,6 @@ public class AuthenticationController {
                 response.put("email", user.getEmail());
                 response.put("firstName", user.getFirstName());
                 response.put("lastName", user.getLastName());
-                response.put("balance", user.getBalance());
                 response.put("message", "Authentification réussie");
 
                 return ResponseEntity.ok(response);
