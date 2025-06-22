@@ -6,6 +6,7 @@ import com.PayMyBuddy.service.TransactionService;
 import com.PayMyBuddy.service.UserAccountService;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 
+import java.util.Collections;
 import java.util.Optional;
 
 @Controller
@@ -55,7 +57,14 @@ public class WebController {
     @PostMapping("/register")
     public String registerUser(@ModelAttribute("user") UserAccount user) {
         userAccountService.save(user);
-        return "redirect:/login?registered";
+
+        Authentication authentication = new UsernamePasswordAuthenticationToken(
+                user.getEmail(), user.getPassword(),
+                Collections.emptyList()
+        );
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+
+        return "redirect:/dashboard";
     }
 
     @GetMapping("/dashboard")
