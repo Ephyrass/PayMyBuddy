@@ -57,11 +57,7 @@ public class TransactionController {
     @GetMapping("/user/{userId}")
     public ResponseEntity<List<Transaction>> getTransactionsByUser(@PathVariable Long userId) {
         Optional<UserAccount> user = userAccountService.findById(userId);
-        if (user.isPresent()) {
-            return ResponseEntity.ok(transactionService.findByUser(user.get()));
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+        return user.map(userAccount -> ResponseEntity.ok(transactionService.findByUser(userAccount))).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     /**
@@ -72,11 +68,7 @@ public class TransactionController {
     @GetMapping("/sent/{userId}")
     public ResponseEntity<List<Transaction>> getTransactionsBySender(@PathVariable Long userId) {
         Optional<UserAccount> sender = userAccountService.findById(userId);
-        if (sender.isPresent()) {
-            return ResponseEntity.ok(transactionService.findBySender(sender.get()));
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+        return sender.map(userAccount -> ResponseEntity.ok(transactionService.findBySender(userAccount))).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     /**
@@ -87,11 +79,7 @@ public class TransactionController {
     @GetMapping("/received/{userId}")
     public ResponseEntity<List<Transaction>> getTransactionsByReceiver(@PathVariable Long userId) {
         Optional<UserAccount> receiver = userAccountService.findById(userId);
-        if (receiver.isPresent()) {
-            return ResponseEntity.ok(transactionService.findByReceiver(receiver.get()));
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+        return receiver.map(userAccount -> ResponseEntity.ok(transactionService.findByReceiver(userAccount))).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     /**
