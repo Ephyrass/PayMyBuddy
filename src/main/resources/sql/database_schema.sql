@@ -1,10 +1,3 @@
--- PayMyBuddy Database Schema (PostgreSQL version)
-
--- Drop tables if they exist to allow for clean initialization
-DROP TABLE IF EXISTS billing;
-DROP TABLE IF EXISTS transaction;
-DROP TABLE IF EXISTS connection;
-DROP TABLE IF EXISTS user_account;
 
 -- Create User Account table
 CREATE TABLE user_account (

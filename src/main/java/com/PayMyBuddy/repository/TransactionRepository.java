@@ -13,5 +13,4 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     List<Transaction> findBySender(UserAccount sender);
     List<Transaction> findByReceiver(UserAccount receiver);
     List<Transaction> findBySenderOrReceiverOrderByDateDesc(UserAccount sender, UserAccount receiver);
-    List<Transaction> findByDateBetween(LocalDateTime start, LocalDateTime end);
 }
