@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 import java.util.List;
 
+
 @RestController
 @RequestMapping("/api/billings")
 public class BillingController {
@@ -24,11 +25,20 @@ public class BillingController {
         this.transactionService = transactionService;
     }
 
+    /**
+     * Retrieves all billings.
+     * @return a list of all billings
+     */
     @GetMapping
     public ResponseEntity<List<Billing>> getAllBillings() {
         return ResponseEntity.ok(billingService.findAll());
     }
 
+    /**
+     * Retrieves a billing by its ID.
+     * @param id the billing ID
+     * @return the billing or 404 if not found
+     */
     @GetMapping("/{id}")
     public ResponseEntity<Billing> getBillingById(@PathVariable Long id) {
         return billingService.findById(id)
@@ -36,11 +46,22 @@ public class BillingController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    /**
+     * Retrieves billings by processed status.
+     * @param processed the processed status
+     * @return a list of billings with the given processed status
+     */
     @GetMapping("/processed/{processed}")
     public ResponseEntity<List<Billing>> getBillingsByProcessedStatus(@PathVariable Boolean processed) {
         return ResponseEntity.ok(billingService.findByProcessed(processed));
     }
 
+    /**
+     * Retrieves billings between two dates.
+     * @param start the start date
+     * @param end the end date
+     * @return a list of billings between the given dates
+     */
     @GetMapping("/date-range")
     public ResponseEntity<List<Billing>> getBillingsBetweenDates(
             @RequestParam("start") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime start,
@@ -55,6 +76,11 @@ public class BillingController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    /**
+     * Marks a billing as processed.
+     * @param id the billing ID
+     * @return the processed billing or 404 if not found
+     */
     @PostMapping("/{id}/process")
     public ResponseEntity<Billing> markBillingAsProcessed(@PathVariable Long id) {
         try {
@@ -65,6 +91,10 @@ public class BillingController {
         }
     }
 
+    /**
+     * Processes all unprocessed billings.
+     * @return a list of processed billings
+     */
     @PostMapping("/process-all")
     public ResponseEntity<List<Billing>> processAllUnprocessedBillings() {
         List<Billing> processedBillings = billingService.processUnprocessedBillings();

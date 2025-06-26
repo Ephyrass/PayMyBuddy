@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+
 @RestController
 @RequestMapping("/api")
 public class AuthenticationController {
@@ -32,6 +33,11 @@ public class AuthenticationController {
         this.userAccountService = userAccountService;
     }
 
+    /**
+     * Authenticates a user with email and password.
+     * @param loginRequest a map containing email and password
+     * @return the authenticated user or an error message
+     */
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> loginRequest) {
         String email = loginRequest.get("email");

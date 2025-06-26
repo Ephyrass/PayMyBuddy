@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+
 @RestController
 @RequestMapping("/api/transactions")
 public class TransactionController {
@@ -27,11 +28,20 @@ public class TransactionController {
         this.userAccountService = userAccountService;
     }
 
+    /**
+     * Retrieves all transactions.
+     * @return a list of all transactions
+     */
     @GetMapping
     public ResponseEntity<List<Transaction>> getAllTransactions() {
         return ResponseEntity.ok(transactionService.findAll());
     }
 
+    /**
+     * Retrieves a transaction by its ID.
+     * @param id the transaction ID
+     * @return the transaction or 404 if not found
+     */
     @GetMapping("/{id}")
     public ResponseEntity<Transaction> getTransactionById(@PathVariable Long id) {
         return transactionService.findById(id)
@@ -39,6 +49,11 @@ public class TransactionController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    /**
+     * Retrieves all transactions for a specific user.
+     * @param userId the user ID
+     * @return a list of transactions for the user
+     */
     @GetMapping("/user/{userId}")
     public ResponseEntity<List<Transaction>> getTransactionsByUser(@PathVariable Long userId) {
         Optional<UserAccount> user = userAccountService.findById(userId);
@@ -49,6 +64,11 @@ public class TransactionController {
         }
     }
 
+    /**
+     * Retrieves all transactions sent by a specific user.
+     * @param userId the user ID
+     * @return a list of transactions sent by the user
+     */
     @GetMapping("/sent/{userId}")
     public ResponseEntity<List<Transaction>> getTransactionsBySender(@PathVariable Long userId) {
         Optional<UserAccount> sender = userAccountService.findById(userId);
@@ -59,6 +79,11 @@ public class TransactionController {
         }
     }
 
+    /**
+     * Retrieves all transactions received by a specific user.
+     * @param userId the user ID
+     * @return a list of transactions received by the user
+     */
     @GetMapping("/received/{userId}")
     public ResponseEntity<List<Transaction>> getTransactionsByReceiver(@PathVariable Long userId) {
         Optional<UserAccount> receiver = userAccountService.findById(userId);
@@ -69,6 +94,11 @@ public class TransactionController {
         }
     }
 
+    /**
+     * Creates a new transaction and transfers the specified amount from the sender to the receiver.
+     * @param payload the transaction details including senderId, receiverId, amount, and description
+     * @return the created transaction or an error message
+     */
     @PostMapping("/transfer")
     public ResponseEntity<?> makeTransaction(@RequestBody Map<String, Object> payload) {
         try {

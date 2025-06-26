@@ -17,6 +17,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import java.util.Collections;
 import java.util.Optional;
 
+/**
+ * WebController handles all web page requests for the PayMyBuddy application.
+ * It manages user authentication, registration, dashboard, connections, and transactions views.
+ */
 @Controller
 public class WebController {
 
@@ -32,28 +36,46 @@ public class WebController {
         this.transactionService = transactionService;
     }
 
+    /**
+     * Displays the home page or redirects authenticated users to the dashboard.
+     * @return the name of the view to display
+     */
     @GetMapping("/")
     public String index() {
-        // Si l'utilisateur est déjà authentifié, redirigez-le vers le dashboard
+        // If the user is already authenticated, redirect them to the dashboard
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth != null && auth.isAuthenticated() && !auth.getName().equals("anonymousUser")) {
             return "redirect:/dashboard";
         }
-        // Sinon, affichez la page d'accueil
+        // Otherwise, display the home page
         return "index";
     }
 
+    /**
+     * Displays the login page.
+     * @return the login view name
+     */
     @GetMapping("/login")
     public String loginPage() {
         return "login";
     }
 
+    /**
+     * Displays the registration page.
+     * @param model the model to add attributes to
+     * @return the register view name
+     */
     @GetMapping("/register")
     public String registerPage(Model model) {
         model.addAttribute("user", new UserAccount());
         return "register";
     }
 
+    /**
+     * Handles user registration and authenticates the new user.
+     * @param user the user to register
+     * @return redirect to dashboard after registration
+     */
     @PostMapping("/register")
     public String registerUser(@ModelAttribute("user") UserAccount user) {
         userAccountService.save(user);
@@ -67,19 +89,24 @@ public class WebController {
         return "redirect:/dashboard";
     }
 
+    /**
+     * Displays the dashboard for the authenticated user.
+     * @param model the model to add attributes to
+     * @return the dashboard view name or redirect to login if not authenticated
+     */
     @GetMapping("/dashboard")
     public String dashboard(Model model) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 
-        // Vérifier si l'utilisateur est authentifié mais, n'est pas l'utilisateur anonyme
+        // Check if the user is authenticated but is not the anonymous user
         if (auth == null || auth.getName().equals("anonymousUser")) {
             return "redirect:/login";
         }
 
-        // Rechercher l'utilisateur par email et rediriger si non trouvé
+        // Find the user by email and redirect if not found
         Optional<UserAccount> optionalUser = userAccountService.findByEmail(auth.getName());
         if (optionalUser.isEmpty()) {
-            // L'email de l'utilisateur authentifié n'existe pas dans la base de données
+            // The email of the authenticated user does not exist in the database
             return "redirect:/login?error=usernotfound";
         }
 
@@ -91,11 +118,16 @@ public class WebController {
         return "dashboard";
     }
 
+    /**
+     * Displays the user's connections (contacts) page.
+     * @param model the model to add attributes to
+     * @return the connections view name
+     */
     @GetMapping("/connections")
     public String connectionsPage(Model model) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         UserAccount user = userAccountService.findByEmail(auth.getName())
-                .orElseThrow(() -> new IllegalArgumentException("Utilisateur non trouvé"));
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
         model.addAttribute("user", user);
         model.addAttribute("connections", connectionService.findByOwnerId(user.getId()));
@@ -103,11 +135,17 @@ public class WebController {
         return "connections";
     }
 
+    /**
+     * Displays the transactions page, optionally pre-selecting a contact.
+     * @param contactId the ID of the contact to pre-select (optional)
+     * @param model the model to add attributes to
+     * @return the transactions view name
+     */
     @GetMapping("/transactions")
     public String transactionsPage(@org.springframework.web.bind.annotation.RequestParam(value = "contactId", required = false) Long contactId, Model model) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         UserAccount user = userAccountService.findByEmail(auth.getName())
-                .orElseThrow(() -> new IllegalArgumentException("Utilisateur non trouvé"));
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
         model.addAttribute("user", user);
         model.addAttribute("connections", connectionService.findByOwnerId(user.getId()));
@@ -118,37 +156,49 @@ public class WebController {
         return "transactions";
     }
 
+    /**
+     * Handles adding a new connection (contact) for the authenticated user.
+     * @param friendEmail the email of the contact to add
+     * @return redirect to connections page with success or error message
+     */
     @PostMapping("/connections/add")
     public String addConnection(@ModelAttribute("email") String friendEmail) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         UserAccount user = userAccountService.findByEmail(auth.getName())
-                .orElseThrow(() -> new IllegalArgumentException("Utilisateur non trouvé"));
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        // Vérifier si l'utilisateur essaie d'ajouter sa propre adresse e-mail
+        // Check if the user is trying to add their own email address
         if (user.getEmail().equals(friendEmail)) {
             return "redirect:/connections?error=self_connection";
         }
 
         try {
             UserAccount friend = userAccountService.findByEmail(friendEmail)
-                    .orElseThrow(() -> new IllegalArgumentException("Contact non trouvé"));
+                    .orElseThrow(() -> new IllegalArgumentException("Contact not found"));
 
             connectionService.createConnection(user.getId(), friend.getId());
             return "redirect:/connections?success";
         } catch (IllegalArgumentException e) {
-            // Encoder le message d'erreur pour l'URL
+            // Encode the error message for the URL
             String errorMessage = java.net.URLEncoder.encode(e.getMessage(), java.nio.charset.StandardCharsets.UTF_8);
             return "redirect:/connections?error=" + errorMessage;
         }
     }
 
+    /**
+     * Handles sending money to a contact.
+     * @param receiverId the ID of the contact to send money to
+     * @param amount the amount to send
+     * @param description the description of the transaction
+     * @return redirect to transactions page with success or error message
+     */
     @PostMapping("/transactions/send")
     public String sendMoney(@ModelAttribute("receiverId") Long receiverId,
                            @ModelAttribute("amount") Double amount,
                            @ModelAttribute("description") String description) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         UserAccount user = userAccountService.findByEmail(auth.getName())
-                .orElseThrow(() -> new IllegalArgumentException("Utilisateur non trouvé"));
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
         try {
             transactionService.makeTransaction(user.getId(), receiverId, new java.math.BigDecimal(amount), description);
@@ -159,22 +209,27 @@ public class WebController {
         }
     }
 
+    /**
+     * Handles deleting a connection (contact) for the authenticated user.
+     * @param id the ID of the connection to delete
+     * @return redirect to connections page with success or error message
+     */
     @PostMapping("/connections/delete/{id}")
     public String deleteConnection(@PathVariable Long id) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         UserAccount user = userAccountService.findByEmail(auth.getName())
-                .orElseThrow(() -> new IllegalArgumentException("Utilisateur non trouvé"));
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
         try {
-            // Vérifier que la connexion existe
+            // Check if the connection exists
             if (connectionService.findById(id).isEmpty()) {
                 return "redirect:/connections?error=connection_not_found";
             }
 
-            // Vérifier que la connexion appartient bien à l'utilisateur actuel
+            // Check if the connection belongs to the current user
             connectionService.findById(id).ifPresent(connection -> {
                 if (!connection.getOwner().getId().equals(user.getId())) {
-                    throw new IllegalArgumentException("Vous n'êtes pas autorisé à supprimer cette connexion");
+                    throw new IllegalArgumentException("You are not authorized to delete this connection");
                 }
                 connectionService.deleteConnection(id);
             });

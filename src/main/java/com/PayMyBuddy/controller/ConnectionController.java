@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 
+
 @RestController
 @RequestMapping("/api/connections")
 public class ConnectionController {
@@ -21,11 +22,20 @@ public class ConnectionController {
         this.connectionService = connectionService;
     }
 
+    /**
+     * Retrieves all connections.
+     * @return a list of all connections
+     */
     @GetMapping
     public ResponseEntity<List<Connection>> getAllConnections() {
         return ResponseEntity.ok(connectionService.findAll());
     }
 
+    /**
+     * Retrieves all connections for a specific user.
+     * @param userId the user ID
+     * @return a list of connections for the user
+     */
     @GetMapping("/user/{userId}")
     public ResponseEntity<List<Connection>> getConnectionsByUser(@PathVariable Long userId) {
         try {
@@ -35,6 +45,11 @@ public class ConnectionController {
         }
     }
 
+    /**
+     * Retrieves a connection by its ID.
+     * @param id the connection ID
+     * @return the connection or 404 if not found
+     */
     @GetMapping("/{id}")
     public ResponseEntity<Connection> getConnectionById(@PathVariable Long id) {
         return connectionService.findById(id)
@@ -42,6 +57,11 @@ public class ConnectionController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    /**
+     * Creates a new connection between two users.
+     * @param payload a map containing ownerId and friendId
+     * @return the created connection or an error message
+     */
     @PostMapping
     public ResponseEntity<Connection> createConnection(@RequestBody Map<String, Long> payload) {
         try {
@@ -59,6 +79,11 @@ public class ConnectionController {
         }
     }
 
+    /**
+     * Deletes a connection by its ID.
+     * @param id the connection ID
+     * @return 204 No Content if deleted, 404 if not found
+     */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteConnection(@PathVariable Long id) {
         try {
@@ -69,6 +94,11 @@ public class ConnectionController {
         }
     }
 
+    /**
+     * Deletes a connection between two users.
+     * @param payload a map containing ownerId and friendId
+     * @return 204 No Content if deleted, 404 if not found
+     */
     @DeleteMapping
     public ResponseEntity<Void> deleteConnectionBetweenUsers(@RequestBody Map<String, Long> payload) {
         try {

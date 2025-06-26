@@ -23,11 +23,20 @@ public class UserAccountController {
         this.userAccountService = userAccountService;
     }
 
+    /**
+     * Retrieves all user accounts.
+     * @return a list of all users
+     */
     @GetMapping
     public ResponseEntity<List<UserAccount>> getAllUsers() {
         return ResponseEntity.ok(userAccountService.findAll());
     }
 
+    /**
+     * Retrieves a user account by its ID.
+     * @param id the user ID
+     * @return the user account or 404 if not found
+     */
     @GetMapping("/{id}")
     public ResponseEntity<UserAccount> getUserById(@PathVariable Long id) {
         return userAccountService.findById(id)
@@ -35,6 +44,11 @@ public class UserAccountController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    /**
+     * Registers a new user account.
+     * @param user the user to register
+     * @return the registered user or an error message
+     */
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@RequestBody UserAccount user) {
         try {
@@ -46,16 +60,22 @@ public class UserAccountController {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
         } catch (DataIntegrityViolationException e) {
             Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("error", "Un utilisateur avec cette adresse e-mail existe déjà");
+            errorResponse.put("error", "A user with this email address already exists");
             return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
         } catch (Exception e) {
             Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("error", "Une erreur est survenue lors de l'inscription: " + e.getMessage());
+            errorResponse.put("error", "An error occurred during registration: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }
 
 
+    /**
+     * Updates an existing user account.
+     * @param id the user ID
+     * @param user the user data to update
+     * @return the updated user or 404 if not found
+     */
     @PutMapping("/{id}")
     public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody UserAccount user) {
         try {
@@ -68,11 +88,16 @@ public class UserAccountController {
                     .orElse(ResponseEntity.notFound().build());
         } catch (DataIntegrityViolationException e) {
             Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("error", "Un utilisateur avec cette adresse e-mail existe déjà");
+            errorResponse.put("error", "A user with this email address already exists");
             return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
         }
     }
 
+    /**
+     * Deletes a user account by its ID.
+     * @param id the user ID
+     * @return 204 No Content if deleted, 404 if not found
+     */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
         if (userAccountService.findById(id).isPresent()) {
