@@ -61,7 +61,7 @@
                                             <option th:each="connection : ${connections}"
                                                     th:value="${connection.friend.id}"
                                                     th:text="${connection.friend.firstName + ' ' + connection.friend.lastName}"
-                                                    th:selected="${param.contactId != null && connection.friend.id == param.contactId[0]}">
+                                                    th:selected="${contactId != null && connection.friend.id == contactId}">
                                                 Nom du contact
                                             </option>
                                         </select>

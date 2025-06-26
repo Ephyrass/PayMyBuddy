@@ -175,7 +175,7 @@ class WebControllerTest {
         when(transactionService.findByUser(testUser)).thenReturn(new ArrayList<>());
 
         // Act
-        String result = webController.transactionsPage(model);
+        String result = webController.transactionsPage(null, model);
 
         // Assert
         assertEquals("transactions", result);

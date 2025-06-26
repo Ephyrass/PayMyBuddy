@@ -104,7 +104,7 @@ public class WebController {
     }
 
     @GetMapping("/transactions")
-    public String transactionsPage(Model model) {
+    public String transactionsPage(@org.springframework.web.bind.annotation.RequestParam(value = "contactId", required = false) Long contactId, Model model) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         UserAccount user = userAccountService.findByEmail(auth.getName())
                 .orElseThrow(() -> new IllegalArgumentException("Utilisateur non trouvé"));
@@ -112,7 +112,9 @@ public class WebController {
         model.addAttribute("user", user);
         model.addAttribute("connections", connectionService.findByOwnerId(user.getId()));
         model.addAttribute("transactions", transactionService.findByUser(user));
-
+        if (contactId != null) {
+            model.addAttribute("contactId", contactId);
+        }
         return "transactions";
     }
 
