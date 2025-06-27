@@ -62,21 +62,21 @@ public class TransactionService {
 
     @Transactional
     public Transaction makeTransaction(Long senderId, Long receiverId, BigDecimal amount, String description) {
-        // Vérifier que le montant est positif
+        // Check that the amount is positive
         if (amount.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("Le montant doit être supérieur à zéro");
+            throw new IllegalArgumentException("The amount must be greater than zero");
         }
 
-        // Récupérer l'expéditeur et le destinataire
+        // Retrieve the sender and the receiver
         UserAccount sender = userAccountRepository.findById(senderId)
-                .orElseThrow(() -> new IllegalArgumentException("Expéditeur non trouvé"));
+                .orElseThrow(() -> new IllegalArgumentException("Sender not found"));
 
         UserAccount receiver = userAccountRepository.findById(receiverId)
-                .orElseThrow(() -> new IllegalArgumentException("Destinataire non trouvé"));
+                .orElseThrow(() -> new IllegalArgumentException("Receiver not found"));
 
-        // Vérifier que l'expéditeur et le destinataire sont connectés
+        // Check that the sender and receiver are connected
         if (!connectionRepository.existsByOwnerAndFriend(sender, receiver)) {
-            throw new IllegalArgumentException("Vous n'êtes pas connecté à cet utilisateur");
+            throw new IllegalArgumentException("You are not connected to this user");
         }
 
         // Calculer les frais
@@ -100,7 +100,7 @@ public class TransactionService {
         billing.setDate(LocalDateTime.now());
         billing.setProcessed(false);
         billing.setFeePercentage(feePercentage);
-        billing.setDescription("Frais de transaction pour le transfert de " + amount + " à " + receiver.getEmail());
+        billing.setDescription("Transaction fee for transferring " + amount + " to " + receiver.getEmail());
 
         billingRepository.save(billing);
 

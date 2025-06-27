@@ -37,7 +37,7 @@ public class Billing {
     @Column(nullable = false)
     private String description;
 
-    // Méthode utilitaire pour calculer les frais basés sur un montant et un pourcentage
+    // Method to calculate the fee based on the amount and fee percentage
     public static BigDecimal calculateFee(BigDecimal amount, BigDecimal feePercentage) {
         return amount.multiply(feePercentage.divide(new BigDecimal("100")));
     }

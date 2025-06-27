@@ -27,14 +27,14 @@ public class CustomUserDetailsService implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         UserAccount userAccount = userAccountRepository.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("Utilisateur non trouvé avec l'email : " + email));
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
 
-        // Par défaut, tous les utilisateurs ont le rôle "USER"
+        // By default, all users have the role "USER"
         List<GrantedAuthority> authorities = new ArrayList<>();
         authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
 
-        // Pour un système plus complexe, vous pourriez vouloir stocker les rôles en base de données
-        // et les charger ici
+        // For a more complex system, you might want to store roles in the database
+        // and load them here
 
         return new User(
                 userAccount.getEmail(),

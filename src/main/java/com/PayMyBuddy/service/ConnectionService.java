@@ -33,7 +33,7 @@ public class ConnectionService {
 
     public List<Connection> findByOwnerId(Long ownerId) {
         UserAccount owner = userAccountRepository.findById(ownerId)
-                .orElseThrow(() -> new IllegalArgumentException("Utilisateur propriétaire non trouvé"));
+                .orElseThrow(() -> new IllegalArgumentException("Owner user not found"));
         return connectionRepository.findByOwner(owner);
     }
 
@@ -45,19 +45,19 @@ public class ConnectionService {
     public Connection createConnection(Long ownerId, Long friendId) {
         // Vérifier que les deux utilisateurs existent
         UserAccount owner = userAccountRepository.findById(ownerId)
-                .orElseThrow(() -> new IllegalArgumentException("Utilisateur propriétaire non trouvé"));
+                .orElseThrow(() -> new IllegalArgumentException("Owner user not found"));
 
         UserAccount friend = userAccountRepository.findById(friendId)
-                .orElseThrow(() -> new IllegalArgumentException("Utilisateur ami non trouvé"));
+                .orElseThrow(() -> new IllegalArgumentException("Friend user not found"));
 
-        // Vérifier que la connexion n'existe pas déjà
+        // Check if the connection already exists
         if (connectionRepository.existsByOwnerAndFriend(owner, friend)) {
-            throw new IllegalArgumentException("Cette connexion existe déjà");
+            throw new IllegalArgumentException("This connection already exists");
         }
 
-        // Vérifier que l'utilisateur n'essaie pas de se connecter à lui-même
+        // Check if the user is trying to connect to themselves
         if (ownerId.equals(friendId)) {
-            throw new IllegalArgumentException("Vous ne pouvez pas vous connecter à vous-même");
+            throw new IllegalArgumentException("You cannot connect to yourself");
         }
 
         Connection connection = new Connection();
@@ -75,17 +75,17 @@ public class ConnectionService {
     @Transactional
     public void deleteConnectionBetweenUsers(Long ownerId, Long friendId) {
         UserAccount owner = userAccountRepository.findById(ownerId)
-                .orElseThrow(() -> new IllegalArgumentException("Utilisateur propriétaire non trouvé"));
+                .orElseThrow(() -> new IllegalArgumentException("Owner user not found"));
 
         UserAccount friend = userAccountRepository.findById(friendId)
-                .orElseThrow(() -> new IllegalArgumentException("Utilisateur ami non trouvé"));
+                .orElseThrow(() -> new IllegalArgumentException("Friend user not found"));
 
         Optional<Connection> connection = connectionRepository.findByOwnerAndFriend(owner, friend);
 
         if (connection.isPresent()) {
             connectionRepository.delete(connection.get());
         } else {
-            throw new IllegalArgumentException("La connexion n'existe pas");
+            throw new IllegalArgumentException("The connection does not exist");
         }
     }
 

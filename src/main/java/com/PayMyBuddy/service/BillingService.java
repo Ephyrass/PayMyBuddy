@@ -49,7 +49,7 @@ public class BillingService {
     @Transactional
     public Billing markAsProcessed(Long id) {
         Billing billing = billingRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Facturation non trouvée"));
+                .orElseThrow(() -> new IllegalArgumentException("Billing not found"));
 
         billing.setProcessed(true);
         return billingRepository.save(billing);

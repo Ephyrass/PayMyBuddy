@@ -34,27 +34,39 @@ public class UserAccountService {
         return userAccountRepository.findByEmail(email);
     }
 
+    /**
+     * Saves a user account. The @Transactional annotation ensures that the operation
+     * is executed within a transaction. If an exception occurs, all changes will be rolled back.
+     */
     @Transactional
     public UserAccount save(UserAccount userAccount) {
-        // Si le mot de passe n'est pas déjà crypté (par exemple lors d'une mise à jour)
+        // If the password is not already encrypted (for example during an update)
         if (userAccount.getPassword() != null && !userAccount.getPassword().startsWith("$2a$")) {
             userAccount.setPassword(passwordEncoder.encode(userAccount.getPassword()));
         }
         return userAccountRepository.save(userAccount);
     }
 
+    /**
+     * Registers a new user account. The @Transactional annotation ensures that the operation
+     * is executed within a transaction. If an exception occurs, all changes will be rolled back.
+     */
     @Transactional
     public UserAccount register(UserAccount userAccount) {
         if (userAccountRepository.existsByEmail(userAccount.getEmail())) {
-            throw new IllegalArgumentException("Un utilisateur avec cette adresse e-mail existe déjà");
+            throw new IllegalArgumentException("A user with this email address already exists");
         }
 
-        // Crypter le mot de passe avant de sauvegarder l'utilisateur
+        // Encrypt the password before saving the user
         userAccount.setPassword(passwordEncoder.encode(userAccount.getPassword()));
 
         return userAccountRepository.save(userAccount);
     }
 
+    /**
+     * Deletes a user account by its ID. The @Transactional annotation ensures that the operation
+     * is executed within a transaction. If an exception occurs, all changes will be rolled back.
+     */
     @Transactional
     public void delete(Long id) {
         userAccountRepository.deleteById(id);
