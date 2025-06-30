@@ -169,7 +169,7 @@ class TransactionServiceTest {
             transactionService.makeTransaction(1L, 2L, amount, "Test transaction");
         });
 
-        assertEquals("Vous n'êtes pas connecté à cet utilisateur", exception.getMessage());
+        assertEquals("You are not connected to this user", exception.getMessage());
 
         verify(userAccountRepository).findById(1L);
         verify(userAccountRepository).findById(2L);

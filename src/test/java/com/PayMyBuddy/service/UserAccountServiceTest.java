@@ -124,11 +124,10 @@ class UserAccountServiceTest {
             userAccountService.register(newUser);
         });
 
-        assertEquals("Un utilisateur avec cette adresse e-mail existe déjà", exception.getMessage());
+        assertEquals("A user with this email address already exists", exception.getMessage());
         verify(userAccountRepository).existsByEmail("test@example.com");
         verify(userAccountRepository, never()).save(any(UserAccount.class));
     }
-
 
 
 

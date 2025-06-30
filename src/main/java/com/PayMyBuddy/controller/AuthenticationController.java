@@ -10,18 +10,17 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
 
-@RestController
-@RequestMapping("/api")
+@Controller
 public class AuthenticationController {
 
     private final AuthenticationManager authenticationManager;
@@ -34,11 +33,65 @@ public class AuthenticationController {
     }
 
     /**
+     * Displays the home page or redirects authenticated users to the dashboard.
+     * @return the name of the view to display
+     */
+    @GetMapping("/")
+    public String index() {
+        // If the user is already authenticated, redirect them to the dashboard
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated() && !auth.getName().equals("anonymousUser")) {
+            return "redirect:/dashboard";
+        }
+        // Otherwise, display the home page
+        return "index";
+    }
+
+    /**
+     * Displays the login page.
+     * @return the login view name
+     */
+    @GetMapping("/login")
+    public String loginPage() {
+        return "login";
+    }
+
+    /**
+     * Displays the registration page.
+     * @param model the model to add attributes to
+     * @return the register view name
+     */
+    @GetMapping("/register")
+    public String registerPage(Model model) {
+        model.addAttribute("user", new UserAccount());
+        return "register";
+    }
+
+    /**
+     * Handles user registration and authenticates the new user.
+     * @param user the user to register
+     * @return redirect to dashboard after registration
+     */
+    @PostMapping("/register")
+    public String registerUser(@ModelAttribute("user") UserAccount user) {
+        userAccountService.save(user);
+
+        Authentication authentication = new UsernamePasswordAuthenticationToken(
+                user.getEmail(), user.getPassword(),
+                Collections.emptyList()
+        );
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+
+        return "redirect:/dashboard";
+    }
+
+    /**
      * Authenticates a user with email and password.
      * @param loginRequest a map containing email and password
      * @return the authenticated user or an error message
      */
-    @PostMapping("/login")
+    @PostMapping("/api/login")
+    @ResponseBody
     public ResponseEntity<?> login(@RequestBody Map<String, String> loginRequest) {
         String email = loginRequest.get("email");
         String password = loginRequest.get("password");

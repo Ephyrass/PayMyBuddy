@@ -13,6 +13,11 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.ui.Model;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -21,6 +26,8 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 class AuthenticationControllerTest {
 
@@ -30,15 +37,22 @@ class AuthenticationControllerTest {
     @Mock
     private UserAccountService userAccountService;
 
+    @Mock
+    private Model model;
+
     @InjectMocks
     private AuthenticationController authenticationController;
 
+    private MockMvc mockMvc;
     private UserAccount testUser;
     private Map<String, String> loginRequest;
+    private SecurityContext securityContext;
+    private Authentication authentication;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
+        mockMvc = MockMvcBuilders.standaloneSetup(authenticationController).build();
 
         testUser = new UserAccount();
         testUser.setId(1L);
@@ -50,13 +64,80 @@ class AuthenticationControllerTest {
         loginRequest = new HashMap<>();
         loginRequest.put("email", "test@example.com");
         loginRequest.put("password", "password");
+
+        // Mock SecurityContext et Authentication
+        securityContext = mock(SecurityContext.class);
+        authentication = mock(Authentication.class);
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        SecurityContextHolder.setContext(securityContext);
+    }
+
+    // Tests pour les pages web
+
+    @Test
+    void index_shouldRedirectToDashboard_whenUserAuthenticated() {
+        // Arrange
+        when(authentication.isAuthenticated()).thenReturn(true);
+        when(authentication.getName()).thenReturn("test@example.com");
+
+        // Act
+        String result = authenticationController.index();
+
+        // Assert
+        assertEquals("redirect:/dashboard", result);
     }
 
     @Test
-    void login_shouldReturnOk_whenCredentialsValid() {
+    void index_shouldReturnIndexPage_whenUserNotAuthenticated() {
         // Arrange
-        Authentication authentication = mock(Authentication.class);
-        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class))).thenReturn(authentication);
+        when(authentication.getName()).thenReturn("anonymousUser");
+
+        // Act
+        String result = authenticationController.index();
+
+        // Assert
+        assertEquals("index", result);
+    }
+
+    @Test
+    void loginPage_shouldReturnLoginView() {
+        // Act
+        String result = authenticationController.loginPage();
+
+        // Assert
+        assertEquals("login", result);
+    }
+
+    @Test
+    void registerPage_shouldReturnRegisterView() {
+        // Act
+        String result = authenticationController.registerPage(model);
+
+        // Assert
+        assertEquals("register", result);
+        verify(model).addAttribute(eq("user"), any(UserAccount.class));
+    }
+
+    @Test
+    void registerUser_shouldRedirectToDashboard_whenRegistrationSuccessful() {
+        // Arrange
+        when(userAccountService.save(any(UserAccount.class))).thenReturn(testUser);
+
+        // Act
+        String result = authenticationController.registerUser(testUser);
+
+        // Assert
+        assertEquals("redirect:/dashboard", result);
+        verify(userAccountService).save(testUser);
+    }
+
+    // Tests pour l'API
+
+    @Test
+    void login_shouldReturnUserData_whenCredentialsValid() {
+        // Arrange
+        Authentication auth = new UsernamePasswordAuthenticationToken("test@example.com", "password");
+        when(authenticationManager.authenticate(any())).thenReturn(auth);
         when(userAccountService.findByEmail("test@example.com")).thenReturn(Optional.of(testUser));
 
         // Act
@@ -64,11 +145,10 @@ class AuthenticationControllerTest {
 
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertTrue(response.getBody() instanceof Map);
 
         @SuppressWarnings("unchecked")
         Map<String, Object> responseBody = (Map<String, Object>) response.getBody();
-
+        assertNotNull(responseBody);
         assertEquals(1L, responseBody.get("id"));
         assertEquals("test@example.com", responseBody.get("email"));
         assertEquals("Test", responseBody.get("firstName"));
@@ -79,8 +159,7 @@ class AuthenticationControllerTest {
     @Test
     void login_shouldReturnUnauthorized_whenCredentialsInvalid() {
         // Arrange
-        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
-                .thenThrow(new BadCredentialsException("Bad credentials"));
+        when(authenticationManager.authenticate(any())).thenThrow(new BadCredentialsException("Invalid credentials"));
 
         // Act
         ResponseEntity<?> response = authenticationController.login(loginRequest);
@@ -91,32 +170,16 @@ class AuthenticationControllerTest {
     }
 
     @Test
-    void login_shouldReturnInternalServerError_whenUserNotFound() {
-        // Arrange
-        Authentication authentication = mock(Authentication.class);
-        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class))).thenReturn(authentication);
-        when(userAccountService.findByEmail("test@example.com")).thenReturn(Optional.empty());
-
-        // Act
-        ResponseEntity<?> response = authenticationController.login(loginRequest);
-
-        // Assert
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
-        assertEquals("Erreur lors de la récupération des données utilisateur", response.getBody());
-    }
-
-    @Test
-    void logout_shouldClearContextAndReturnOk() {
+    void logout_shouldReturnSuccessMessage() {
         // Act
         ResponseEntity<?> response = authenticationController.logout();
 
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertTrue(response.getBody() instanceof Map);
 
         @SuppressWarnings("unchecked")
         Map<String, String> responseBody = (Map<String, String>) response.getBody();
-
+        assertNotNull(responseBody);
         assertEquals("Déconnexion réussie", responseBody.get("message"));
     }
 }

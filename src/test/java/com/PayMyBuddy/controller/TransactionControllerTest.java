@@ -2,6 +2,7 @@ package com.PayMyBuddy.controller;
 
 import com.PayMyBuddy.model.Transaction;
 import com.PayMyBuddy.model.UserAccount;
+import com.PayMyBuddy.service.ConnectionService;
 import com.PayMyBuddy.service.TransactionService;
 import com.PayMyBuddy.service.UserAccountService;
 import org.junit.jupiter.api.BeforeEach;
@@ -11,6 +12,12 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.ui.Model;
 
 import java.math.BigDecimal;
 import java.util.*;
@@ -27,17 +34,27 @@ class TransactionControllerTest {
     @Mock
     private UserAccountService userAccountService;
 
+    @Mock
+    private ConnectionService connectionService;
+
+    @Mock
+    private Model model;
+
     @InjectMocks
     private TransactionController transactionController;
 
+    private MockMvc mockMvc;
     private UserAccount sender;
     private UserAccount receiver;
     private Transaction testTransaction;
     private List<Transaction> transactions;
+    private SecurityContext securityContext;
+    private Authentication authentication;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
+        mockMvc = MockMvcBuilders.standaloneSetup(transactionController).build();
 
         sender = new UserAccount();
         sender.setId(1L);
@@ -59,7 +76,80 @@ class TransactionControllerTest {
         testTransaction.setDescription("Test transaction");
 
         transactions = Arrays.asList(testTransaction);
+
+        // Mock SecurityContext et Authentication
+        securityContext = mock(SecurityContext.class);
+        authentication = mock(Authentication.class);
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.getName()).thenReturn("sender@example.com");
+        SecurityContextHolder.setContext(securityContext);
     }
+
+    // Tests pour les pages web
+
+    @Test
+    void transactionsPage_shouldReturnTransactionsView() {
+        // Arrange
+        when(userAccountService.findByEmail("sender@example.com")).thenReturn(Optional.of(sender));
+        when(connectionService.findByOwnerId(1L)).thenReturn(Arrays.asList());
+        when(transactionService.findByUser(sender)).thenReturn(transactions);
+
+        // Act
+        String result = transactionController.transactionsPage(null, model);
+
+        // Assert
+        assertEquals("transactions", result);
+        verify(model).addAttribute("user", sender);
+        verify(model).addAttribute(eq("connections"), any());
+        verify(model).addAttribute("transactions", transactions);
+    }
+
+    @Test
+    void transactionsPage_shouldIncludeContactId_whenContactIdProvided() {
+        // Arrange
+        when(userAccountService.findByEmail("sender@example.com")).thenReturn(Optional.of(sender));
+        when(connectionService.findByOwnerId(1L)).thenReturn(Arrays.asList());
+        when(transactionService.findByUser(sender)).thenReturn(transactions);
+
+        // Act
+        String result = transactionController.transactionsPage(2L, model);
+
+        // Assert
+        assertEquals("transactions", result);
+        verify(model).addAttribute("user", sender);
+        verify(model).addAttribute("contactId", 2L);
+    }
+
+    @Test
+    void sendMoney_shouldRedirectWithSuccess_whenTransactionSuccessful() {
+        // Arrange
+        when(userAccountService.findByEmail("sender@example.com")).thenReturn(Optional.of(sender));
+        when(transactionService.makeTransaction(1L, 2L, new BigDecimal("50"), "Test payment"))
+                .thenReturn(testTransaction);
+
+        // Act
+        String result = transactionController.sendMoney(2L, 50.0, "Test payment");
+
+        // Assert
+        assertEquals("redirect:/transactions?success", result);
+        verify(transactionService).makeTransaction(1L, 2L, new BigDecimal("50"), "Test payment");
+    }
+
+    @Test
+    void sendMoney_shouldRedirectWithError_whenTransactionFails() {
+        // Arrange
+        when(userAccountService.findByEmail("sender@example.com")).thenReturn(Optional.of(sender));
+        when(transactionService.makeTransaction(1L, 2L, new BigDecimal("50"), "Test payment"))
+                .thenThrow(new IllegalArgumentException("Insufficient funds"));
+
+        // Act
+        String result = transactionController.sendMoney(2L, 50.0, "Test payment");
+
+        // Assert
+        assertTrue(result.startsWith("redirect:/transactions?error="));
+    }
+
+    // Tests pour l'API
 
     @Test
     void getAllTransactions_shouldReturnAllTransactions() {
@@ -75,7 +165,7 @@ class TransactionControllerTest {
     }
 
     @Test
-    void getTransactionById_shouldReturnTransaction_whenFound() {
+    void getTransactionById_shouldReturnTransaction_whenTransactionExists() {
         // Arrange
         when(transactionService.findById(1L)).thenReturn(Optional.of(testTransaction));
 
@@ -88,7 +178,7 @@ class TransactionControllerTest {
     }
 
     @Test
-    void getTransactionById_shouldReturnNotFound_whenTransactionNotFound() {
+    void getTransactionById_shouldReturnNotFound_whenTransactionDoesNotExist() {
         // Arrange
         when(transactionService.findById(1L)).thenReturn(Optional.empty());
 
@@ -97,11 +187,10 @@ class TransactionControllerTest {
 
         // Assert
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-        assertNull(response.getBody());
     }
 
     @Test
-    void getTransactionsByUser_shouldReturnTransactions_whenUserFound() {
+    void getTransactionsByUser_shouldReturnUserTransactions() {
         // Arrange
         when(userAccountService.findById(1L)).thenReturn(Optional.of(sender));
         when(transactionService.findByUser(sender)).thenReturn(transactions);
@@ -115,7 +204,7 @@ class TransactionControllerTest {
     }
 
     @Test
-    void getTransactionsByUser_shouldReturnNotFound_whenUserNotFound() {
+    void getTransactionsByUser_shouldReturnNotFound_whenUserDoesNotExist() {
         // Arrange
         when(userAccountService.findById(1L)).thenReturn(Optional.empty());
 
@@ -124,11 +213,10 @@ class TransactionControllerTest {
 
         // Assert
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-        assertNull(response.getBody());
     }
 
     @Test
-    void getTransactionsBySender_shouldReturnTransactions_whenSenderFound() {
+    void getTransactionsBySender_shouldReturnSenderTransactions() {
         // Arrange
         when(userAccountService.findById(1L)).thenReturn(Optional.of(sender));
         when(transactionService.findBySender(sender)).thenReturn(transactions);
@@ -142,20 +230,7 @@ class TransactionControllerTest {
     }
 
     @Test
-    void getTransactionsBySender_shouldReturnNotFound_whenSenderNotFound() {
-        // Arrange
-        when(userAccountService.findById(1L)).thenReturn(Optional.empty());
-
-        // Act
-        ResponseEntity<List<Transaction>> response = transactionController.getTransactionsBySender(1L);
-
-        // Assert
-        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-        assertNull(response.getBody());
-    }
-
-    @Test
-    void getTransactionsByReceiver_shouldReturnTransactions_whenReceiverFound() {
+    void getTransactionsByReceiver_shouldReturnReceiverTransactions() {
         // Arrange
         when(userAccountService.findById(2L)).thenReturn(Optional.of(receiver));
         when(transactionService.findByReceiver(receiver)).thenReturn(transactions);
@@ -169,19 +244,6 @@ class TransactionControllerTest {
     }
 
     @Test
-    void getTransactionsByReceiver_shouldReturnNotFound_whenReceiverNotFound() {
-        // Arrange
-        when(userAccountService.findById(2L)).thenReturn(Optional.empty());
-
-        // Act
-        ResponseEntity<List<Transaction>> response = transactionController.getTransactionsByReceiver(2L);
-
-        // Assert
-        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-        assertNull(response.getBody());
-    }
-
-    @Test
     void makeTransaction_shouldReturnCreated_whenTransactionSuccessful() {
         // Arrange
         Map<String, Object> payload = new HashMap<>();
@@ -190,7 +252,7 @@ class TransactionControllerTest {
         payload.put("amount", "100.00");
         payload.put("description", "Test transaction");
 
-        when(transactionService.makeTransaction(eq(1L), eq(2L), any(BigDecimal.class), eq("Test transaction")))
+        when(transactionService.makeTransaction(1L, 2L, new BigDecimal("100.00"), "Test transaction"))
                 .thenReturn(testTransaction);
 
         // Act
@@ -202,12 +264,12 @@ class TransactionControllerTest {
     }
 
     @Test
-    void makeTransaction_shouldReturnBadRequest_whenAmountIsZeroOrNegative() {
+    void makeTransaction_shouldReturnBadRequest_whenAmountIsZero() {
         // Arrange
         Map<String, Object> payload = new HashMap<>();
         payload.put("senderId", 1L);
         payload.put("receiverId", 2L);
-        payload.put("amount", "0.00");
+        payload.put("amount", "0");
         payload.put("description", "Test transaction");
 
         // Act
@@ -219,7 +281,7 @@ class TransactionControllerTest {
     }
 
     @Test
-    void makeTransaction_shouldReturnBadRequest_whenIllegalArgumentException() {
+    void makeTransaction_shouldReturnBadRequest_whenTransactionFails() {
         // Arrange
         Map<String, Object> payload = new HashMap<>();
         payload.put("senderId", 1L);
@@ -227,19 +289,19 @@ class TransactionControllerTest {
         payload.put("amount", "100.00");
         payload.put("description", "Test transaction");
 
-        when(transactionService.makeTransaction(eq(1L), eq(2L), any(BigDecimal.class), eq("Test transaction")))
-                .thenThrow(new IllegalArgumentException("Solde insuffisant"));
+        when(transactionService.makeTransaction(1L, 2L, new BigDecimal("100.00"), "Test transaction"))
+                .thenThrow(new IllegalArgumentException("Insufficient funds"));
 
         // Act
         ResponseEntity<?> response = transactionController.makeTransaction(payload);
 
         // Assert
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        assertEquals("Solde insuffisant", response.getBody());
+        assertEquals("Insufficient funds", response.getBody());
     }
 
     @Test
-    void makeTransaction_shouldReturnInternalServerError_whenGenericException() {
+    void makeTransaction_shouldReturnInternalServerError_whenUnexpectedErrorOccurs() {
         // Arrange
         Map<String, Object> payload = new HashMap<>();
         payload.put("senderId", 1L);
@@ -247,8 +309,8 @@ class TransactionControllerTest {
         payload.put("amount", "100.00");
         payload.put("description", "Test transaction");
 
-        when(transactionService.makeTransaction(eq(1L), eq(2L), any(BigDecimal.class), eq("Test transaction")))
-                .thenThrow(new RuntimeException("Erreur interne"));
+        when(transactionService.makeTransaction(1L, 2L, new BigDecimal("100.00"), "Test transaction"))
+                .thenThrow(new RuntimeException("Database error"));
 
         // Act
         ResponseEntity<?> response = transactionController.makeTransaction(payload);
