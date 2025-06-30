@@ -320,13 +320,10 @@ public class WebController {
                 return "redirect:/profile?error=password_mismatch";
             }
 
-            // Vérifier le mot de passe actuel (cette vérification dépend de votre implémentation)
-            // Ici on suppose que le service a une méthode pour vérifier le mot de passe
             if (!userAccountService.checkPassword(user, currentPassword)) {
                 return "redirect:/profile?error=wrong_password";
             }
 
-            // Mettre à jour le mot de passe
             user.setPassword(newPassword);
             userAccountService.save(user);
 
