@@ -272,7 +272,6 @@ public class WebController {
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
         try {
-            // Vérifier si le nouvel email est déjà utilisé par un autre utilisateur
             if (!user.getEmail().equals(email)) {
                 Optional<UserAccount> existingUser = userAccountService.findByEmail(email);
                 if (existingUser.isPresent()) {
@@ -280,13 +279,11 @@ public class WebController {
                 }
             }
 
-            // Mettre à jour les informations de l'utilisateur
             user.setFirstName(firstName);
             user.setLastName(lastName);
             user.setEmail(email);
             userAccountService.save(user);
 
-            // Mettre à jour l'authentification si l'email a changé
             if (!auth.getName().equals(email)) {
                 Authentication newAuth = new UsernamePasswordAuthenticationToken(
                         email, auth.getCredentials(), auth.getAuthorities()
