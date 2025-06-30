@@ -4,14 +4,7 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 
-### STS ###
-.apt_generated
-.classpath
-.factorypath
-.project
-.settings
-.springBeans
-.sts4-cache
+
 
 ### IntelliJ IDEA ###
 .idea
@@ -42,10 +35,7 @@ target/
 spring-shell.log
 
 # Application-specific sensitive files
-application-local.properties
-application-prod.properties
-application-*.properties
-!application.properties.template
+application.properties
 
 # Database files
 *.db
