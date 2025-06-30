@@ -45,6 +45,7 @@ public class SecurityConfig {
             .csrf(AbstractHttpConfigurer::disable) // Désactiver CSRF pour simplifier les tests API
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/", "/api/users/register", "/api/login", "/login", "/register", "/css/**", "/js/**").permitAll() // Endpoints et ressources publics
+                .requestMatchers("/profile", "/profile/update", "/profile/change-password").authenticated() // Pages de profil
                 .anyRequest().authenticated() // Toutes les autres requêtes nécessitent une authentification
             )
             .authenticationProvider(authenticationProvider())

@@ -71,4 +71,14 @@ public class UserAccountService {
     public void delete(Long id) {
         userAccountRepository.deleteById(id);
     }
+
+    /**
+     * Vérifie si le mot de passe fourni correspond au mot de passe de l'utilisateur.
+     * @param user l'utilisateur dont vérifier le mot de passe
+     * @param rawPassword le mot de passe en clair à vérifier
+     * @return true si le mot de passe correspond, false sinon
+     */
+    public boolean checkPassword(UserAccount user, String rawPassword) {
+        return passwordEncoder.matches(rawPassword, user.getPassword());
+    }
 }

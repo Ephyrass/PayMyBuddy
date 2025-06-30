@@ -240,4 +240,99 @@ public class WebController {
             return "redirect:/connections?error=" + errorMessage;
         }
     }
+
+    /**
+     * Displays the user's profile page.
+     * @param model the model to add attributes to
+     * @return the profile view name
+     */
+    @GetMapping("/profile")
+    public String profilePage(Model model) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        UserAccount user = userAccountService.findByEmail(auth.getName())
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        model.addAttribute("user", user);
+        return "profile";
+    }
+
+    /**
+     * Handles updating user profile information.
+     * @param firstName the new first name
+     * @param lastName the new last name
+     * @param email the new email
+     * @return redirect to profile page with success or error message
+     */
+    @PostMapping("/profile/update")
+    public String updateProfile(@ModelAttribute("firstName") String firstName,
+                               @ModelAttribute("lastName") String lastName,
+                               @ModelAttribute("email") String email) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        UserAccount user = userAccountService.findByEmail(auth.getName())
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        try {
+            // Vérifier si le nouvel email est déjà utilisé par un autre utilisateur
+            if (!user.getEmail().equals(email)) {
+                Optional<UserAccount> existingUser = userAccountService.findByEmail(email);
+                if (existingUser.isPresent()) {
+                    return "redirect:/profile?error=email_exists";
+                }
+            }
+
+            // Mettre à jour les informations de l'utilisateur
+            user.setFirstName(firstName);
+            user.setLastName(lastName);
+            user.setEmail(email);
+            userAccountService.save(user);
+
+            // Mettre à jour l'authentification si l'email a changé
+            if (!auth.getName().equals(email)) {
+                Authentication newAuth = new UsernamePasswordAuthenticationToken(
+                        email, auth.getCredentials(), auth.getAuthorities()
+                );
+                SecurityContextHolder.getContext().setAuthentication(newAuth);
+            }
+
+            return "redirect:/profile?success";
+        } catch (Exception e) {
+            return "redirect:/profile?error=update_failed";
+        }
+    }
+
+    /**
+     * Handles updating user password.
+     * @param currentPassword the current password
+     * @param newPassword the new password
+     * @param confirmPassword the password confirmation
+     * @return redirect to profile page with success or error message
+     */
+    @PostMapping("/profile/change-password")
+    public String changePassword(@ModelAttribute("currentPassword") String currentPassword,
+                                @ModelAttribute("newPassword") String newPassword,
+                                @ModelAttribute("confirmPassword") String confirmPassword) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        UserAccount user = userAccountService.findByEmail(auth.getName())
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        try {
+            if (!newPassword.equals(confirmPassword)) {
+                return "redirect:/profile?error=password_mismatch";
+            }
+
+            // Vérifier le mot de passe actuel (cette vérification dépend de votre implémentation)
+            // Ici on suppose que le service a une méthode pour vérifier le mot de passe
+            if (!userAccountService.checkPassword(user, currentPassword)) {
+                return "redirect:/profile?error=wrong_password";
+            }
+
+            // Mettre à jour le mot de passe
+            user.setPassword(newPassword);
+            userAccountService.save(user);
+
+            return "redirect:/profile?success=password_changed";
+        } catch (Exception e) {
+            return "redirect:/profile?error=password_change_failed";
+        }
+    }
 }
