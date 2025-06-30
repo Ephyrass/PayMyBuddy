@@ -29,5 +29,67 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
-### VS Code ###
-.vscode/
+
+# Compiled class files
+*.class
+
+# Log files
+*.log
+
+
+# Package Files
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# Maven
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# IDE files
+.idea/
+
+
+
+# Spring Boot
+*.orig
+spring-shell.log
+
+# Application-specific sensitive files
+application-local.properties
+application-prod.properties
+application-*.properties
+!application.properties.template
+
+# Database files
+*.db
+
+# Environment variables
+.env
+
+# Logs
+logs/
+*.log
+log/
+
+
+# Backup files
+backups/*.sql
+backups/*.dump
+
+
+
+# Test reports
+surefire-reports/
