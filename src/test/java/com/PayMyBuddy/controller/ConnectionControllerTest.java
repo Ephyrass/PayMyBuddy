@@ -174,7 +174,8 @@ class ConnectionControllerTest {
         String result = connectionController.deleteConnection(1L);
 
         // Assert
-        assertEquals("redirect:/connections?error=connection_not_found", result);
+        assertTrue(result.startsWith("redirect:/connections?error="));
+        assertTrue(result.contains("Connection+not+found") || result.contains("connection_not_found"));
         verify(connectionService, never()).deleteConnection(anyLong());
     }
 

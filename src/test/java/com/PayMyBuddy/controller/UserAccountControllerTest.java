@@ -99,19 +99,19 @@ class UserAccountControllerTest {
     @Test
     void dashboard_shouldRedirectToLogin_whenUserNotAuthenticated() {
         // Arrange
-        when(authentication.getName()).thenReturn("anonymousUser");
+        when(authenticationUtils.getCurrentUser()).thenThrow(new IllegalArgumentException("User not authenticated"));
 
         // Act
         String result = userAccountController.dashboard(model);
 
         // Assert
-        assertEquals("redirect:/login", result);
+        assertEquals("redirect:/login?error=usernotfound", result);
     }
 
     @Test
     void dashboard_shouldRedirectToLogin_whenUserNotFound() {
         // Arrange
-        when(userAccountService.findByEmail("test@example.com")).thenReturn(Optional.empty());
+        when(authenticationUtils.getCurrentUser()).thenThrow(new IllegalArgumentException("User not found"));
 
         // Act
         String result = userAccountController.dashboard(model);
