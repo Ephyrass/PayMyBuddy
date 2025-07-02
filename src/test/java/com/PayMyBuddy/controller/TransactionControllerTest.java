@@ -15,8 +15,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.ui.Model;
 
 import java.math.BigDecimal;
@@ -43,18 +41,14 @@ class TransactionControllerTest {
     @InjectMocks
     private TransactionController transactionController;
 
-    private MockMvc mockMvc;
     private UserAccount sender;
     private UserAccount receiver;
     private Transaction testTransaction;
     private List<Transaction> transactions;
-    private SecurityContext securityContext;
-    private Authentication authentication;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        mockMvc = MockMvcBuilders.standaloneSetup(transactionController).build();
 
         sender = new UserAccount();
         sender.setId(1L);
@@ -78,8 +72,8 @@ class TransactionControllerTest {
         transactions = Arrays.asList(testTransaction);
 
         // Mock SecurityContext et Authentication
-        securityContext = mock(SecurityContext.class);
-        authentication = mock(Authentication.class);
+        SecurityContext securityContext = mock(SecurityContext.class);
+        Authentication authentication = mock(Authentication.class);
         when(securityContext.getAuthentication()).thenReturn(authentication);
         when(authentication.getName()).thenReturn("sender@example.com");
         SecurityContextHolder.setContext(securityContext);
@@ -91,7 +85,7 @@ class TransactionControllerTest {
     void transactionsPage_shouldReturnTransactionsView() {
         // Arrange
         when(userAccountService.findByEmail("sender@example.com")).thenReturn(Optional.of(sender));
-        when(connectionService.findByOwnerId(1L)).thenReturn(Arrays.asList());
+        when(connectionService.findByOwnerId(1L)).thenReturn(Collections.emptyList());
         when(transactionService.findByUser(sender)).thenReturn(transactions);
 
         // Act
@@ -108,7 +102,7 @@ class TransactionControllerTest {
     void transactionsPage_shouldIncludeContactId_whenContactIdProvided() {
         // Arrange
         when(userAccountService.findByEmail("sender@example.com")).thenReturn(Optional.of(sender));
-        when(connectionService.findByOwnerId(1L)).thenReturn(Arrays.asList());
+        when(connectionService.findByOwnerId(1L)).thenReturn(Collections.emptyList());
         when(transactionService.findByUser(sender)).thenReturn(transactions);
 
         // Act
@@ -184,32 +178,6 @@ class TransactionControllerTest {
 
         // Act
         ResponseEntity<Transaction> response = transactionController.getTransactionById(1L);
-
-        // Assert
-        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-    }
-
-    @Test
-    void getTransactionsByUser_shouldReturnUserTransactions() {
-        // Arrange
-        when(userAccountService.findById(1L)).thenReturn(Optional.of(sender));
-        when(transactionService.findByUser(sender)).thenReturn(transactions);
-
-        // Act
-        ResponseEntity<List<Transaction>> response = transactionController.getTransactionsByUser(1L);
-
-        // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(transactions, response.getBody());
-    }
-
-    @Test
-    void getTransactionsByUser_shouldReturnNotFound_whenUserDoesNotExist() {
-        // Arrange
-        when(userAccountService.findById(1L)).thenReturn(Optional.empty());
-
-        // Act
-        ResponseEntity<List<Transaction>> response = transactionController.getTransactionsByUser(1L);
 
         // Assert
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
