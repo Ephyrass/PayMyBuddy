@@ -4,6 +4,7 @@ import com.PayMyBuddy.model.UserAccount;
 import com.PayMyBuddy.service.ConnectionService;
 import com.PayMyBuddy.service.TransactionService;
 import com.PayMyBuddy.service.UserAccountService;
+import com.PayMyBuddy.util.AuthenticationUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -26,12 +27,15 @@ public class UserAccountController {
     private final UserAccountService userAccountService;
     private final ConnectionService connectionService;
     private final TransactionService transactionService;
+    private final AuthenticationUtils authenticationUtils;
 
     @Autowired
-    public UserAccountController(UserAccountService userAccountService, ConnectionService connectionService, TransactionService transactionService) {
+    public UserAccountController(UserAccountService userAccountService, ConnectionService connectionService,
+                                TransactionService transactionService, AuthenticationUtils authenticationUtils) {
         this.userAccountService = userAccountService;
         this.connectionService = connectionService;
         this.transactionService = transactionService;
+        this.authenticationUtils = authenticationUtils;
     }
 
     /**
@@ -41,25 +45,15 @@ public class UserAccountController {
      */
     @GetMapping("/dashboard")
     public String dashboard(Model model) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-
-        // Check if the user is authenticated but is not the anonymous user
-        if (auth == null || auth.getName().equals("anonymousUser")) {
-            return "redirect:/login";
-        }
-
-        // Find the user by email and redirect if not found
-        Optional<UserAccount> optionalUser = userAccountService.findByEmail(auth.getName());
-        if (optionalUser.isEmpty()) {
+        try {
+            UserAccount user = authenticationUtils.getCurrentUser();
+            model.addAttribute("user", user);
+            model.addAttribute("connections", connectionService.findByOwnerId(user.getId()));
+            model.addAttribute("transactions", transactionService.findByUser(user));
+            return "dashboard";
+        } catch (IllegalArgumentException e) {
             return "redirect:/login?error=usernotfound";
         }
-
-        UserAccount user = optionalUser.get();
-        model.addAttribute("user", user);
-        model.addAttribute("connections", connectionService.findByOwnerId(user.getId()));
-        model.addAttribute("transactions", transactionService.findByUser(user));
-
-        return "dashboard";
     }
 
     /**
@@ -69,10 +63,7 @@ public class UserAccountController {
      */
     @GetMapping("/profile")
     public String profilePage(Model model) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        UserAccount user = userAccountService.findByEmail(auth.getName())
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
-
+        UserAccount user = authenticationUtils.getCurrentUser();
         model.addAttribute("user", user);
         return "profile";
     }
@@ -88,9 +79,7 @@ public class UserAccountController {
     public String updateProfile(@ModelAttribute("firstName") String firstName,
                                @ModelAttribute("lastName") String lastName,
                                @ModelAttribute("email") String email) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        UserAccount user = userAccountService.findByEmail(auth.getName())
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        UserAccount user = authenticationUtils.getCurrentUser();
 
         try {
             if (!user.getEmail().equals(email)) {
@@ -105,7 +94,8 @@ public class UserAccountController {
             user.setEmail(email);
             userAccountService.save(user);
 
-            if (!auth.getName().equals(email)) {
+            if (!authenticationUtils.getCurrentUserEmail().equals(email)) {
+                Authentication auth = SecurityContextHolder.getContext().getAuthentication();
                 Authentication newAuth = new UsernamePasswordAuthenticationToken(
                         email, auth.getCredentials(), auth.getAuthorities()
                 );
@@ -129,9 +119,7 @@ public class UserAccountController {
     public String changePassword(@ModelAttribute("currentPassword") String currentPassword,
                                 @ModelAttribute("newPassword") String newPassword,
                                 @ModelAttribute("confirmPassword") String confirmPassword) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        UserAccount user = userAccountService.findByEmail(auth.getName())
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        UserAccount user = authenticationUtils.getCurrentUser();
 
         try {
             if (!newPassword.equals(confirmPassword)) {

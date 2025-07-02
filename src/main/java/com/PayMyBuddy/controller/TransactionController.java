@@ -5,11 +5,10 @@ import com.PayMyBuddy.model.UserAccount;
 import com.PayMyBuddy.service.ConnectionService;
 import com.PayMyBuddy.service.TransactionService;
 import com.PayMyBuddy.service.UserAccountService;
+import com.PayMyBuddy.util.AuthenticationUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -25,12 +24,14 @@ public class TransactionController {
     private final TransactionService transactionService;
     private final UserAccountService userAccountService;
     private final ConnectionService connectionService;
+    private final AuthenticationUtils authenticationUtils;
 
     @Autowired
-    public TransactionController(TransactionService transactionService, UserAccountService userAccountService, ConnectionService connectionService) {
+    public TransactionController(TransactionService transactionService, UserAccountService userAccountService, ConnectionService connectionService, AuthenticationUtils authenticationUtils) {
         this.transactionService = transactionService;
         this.userAccountService = userAccountService;
         this.connectionService = connectionService;
+        this.authenticationUtils = authenticationUtils;
     }
 
     /**
@@ -41,9 +42,7 @@ public class TransactionController {
      */
     @GetMapping("/transactions")
     public String transactionsPage(@RequestParam(value = "contactId", required = false) Long contactId, Model model) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        UserAccount user = userAccountService.findByEmail(auth.getName())
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        UserAccount user = authenticationUtils.getCurrentUser();
 
         model.addAttribute("user", user);
         model.addAttribute("connections", connectionService.findByOwnerId(user.getId()));
@@ -65,9 +64,7 @@ public class TransactionController {
     public String sendMoney(@ModelAttribute("receiverId") Long receiverId,
                            @ModelAttribute("amount") Double amount,
                            @ModelAttribute("description") String description) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        UserAccount user = userAccountService.findByEmail(auth.getName())
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        UserAccount user = authenticationUtils.getCurrentUser();
 
         try {
             transactionService.makeTransaction(user.getId(), receiverId, new BigDecimal(amount), description);
