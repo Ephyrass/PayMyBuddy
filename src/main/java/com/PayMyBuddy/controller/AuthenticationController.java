@@ -74,7 +74,7 @@ public class AuthenticationController {
     @PostMapping("/register")
     public String registerUser(@ModelAttribute("user") UserAccount user) {
         userAccountService.save(user);
-        return "redirect:/login?registered";
+        return "redirect:/dashboard";
     }
 
     /**

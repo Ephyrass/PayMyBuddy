@@ -4,6 +4,7 @@ import com.PayMyBuddy.model.UserAccount;
 import com.PayMyBuddy.service.ConnectionService;
 import com.PayMyBuddy.service.TransactionService;
 import com.PayMyBuddy.service.UserAccountService;
+import com.PayMyBuddy.util.AuthenticationUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -42,6 +43,9 @@ class UserAccountControllerTest {
     @Mock
     private Model model;
 
+    @Mock
+    private AuthenticationUtils authenticationUtils;
+
     @InjectMocks
     private UserAccountController userAccountController;
 
@@ -60,7 +64,6 @@ class UserAccountControllerTest {
         testUser.setEmail("test@example.com");
         testUser.setFirstName("Test");
         testUser.setLastName("User");
-        testUser.setPassword("password");
 
         // Mock SecurityContext et Authentication
         securityContext = mock(SecurityContext.class);
@@ -68,6 +71,10 @@ class UserAccountControllerTest {
         when(securityContext.getAuthentication()).thenReturn(authentication);
         when(authentication.getName()).thenReturn("test@example.com");
         SecurityContextHolder.setContext(securityContext);
+
+        // Mock AuthenticationUtils
+        when(authenticationUtils.getCurrentUser()).thenReturn(testUser);
+        when(authenticationUtils.getCurrentUserEmail()).thenReturn(testUser.getEmail());
     }
 
     // Tests pour les pages web
