@@ -14,7 +14,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -68,21 +67,14 @@ public class AuthenticationController {
     }
 
     /**
-     * Handles user registration and authenticates the new user.
+     * Handles user registration.
      * @param user the user to register
-     * @return redirect to dashboard after registration
+     * @return redirect to login page after registration
      */
     @PostMapping("/register")
     public String registerUser(@ModelAttribute("user") UserAccount user) {
         userAccountService.save(user);
-
-        Authentication authentication = new UsernamePasswordAuthenticationToken(
-                user.getEmail(), user.getPassword(),
-                Collections.emptyList()
-        );
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-
-        return "redirect:/dashboard";
+        return "redirect:/login?registered";
     }
 
     /**
@@ -125,6 +117,7 @@ public class AuthenticationController {
     }
 
     @PostMapping("/logout")
+    @ResponseBody
     public ResponseEntity<?> logout() {
         SecurityContextHolder.clearContext();
         Map<String, String> response = new HashMap<>();

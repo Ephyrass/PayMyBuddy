@@ -51,7 +51,6 @@ public class UserAccountController {
         // Find the user by email and redirect if not found
         Optional<UserAccount> optionalUser = userAccountService.findByEmail(auth.getName());
         if (optionalUser.isEmpty()) {
-            // The email of the authenticated user does not exist in the database
             return "redirect:/login?error=usernotfound";
         }
 

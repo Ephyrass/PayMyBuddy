@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 @Controller
 public class ConnectionController {
@@ -87,17 +86,13 @@ public class ConnectionController {
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
         try {
-            // Check if the connection exists
-            if (connectionService.findById(id).isEmpty()) {
-                return "redirect:/connections?error=connection_not_found";
-            }
-
-            // Check if the connection belongs to the current user
-            connectionService.findById(id).ifPresent(connection -> {
+            connectionService.findById(id).ifPresentOrElse(connection -> {
                 if (!connection.getOwner().getId().equals(user.getId())) {
                     throw new IllegalArgumentException("You are not authorized to delete this connection");
                 }
                 connectionService.deleteConnection(id);
+            }, () -> {
+                throw new IllegalArgumentException("Connection not found");
             });
 
             return "redirect:/connections?success_delete";
@@ -125,11 +120,7 @@ public class ConnectionController {
     @GetMapping("/api/connections/user/{userId}")
     @ResponseBody
     public ResponseEntity<List<Connection>> getConnectionsByUser(@PathVariable Long userId) {
-        try {
-            return ResponseEntity.ok(connectionService.findByOwnerId(userId));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(connectionService.findByOwnerId(userId));
     }
 
     /**
@@ -164,7 +155,7 @@ public class ConnectionController {
             Connection connection = connectionService.createConnection(ownerId, friendId);
             return ResponseEntity.status(HttpStatus.CREATED).body(connection);
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(null);
+            return ResponseEntity.badRequest().build();
         }
     }
 

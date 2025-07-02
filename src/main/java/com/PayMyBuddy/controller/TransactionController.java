@@ -17,7 +17,6 @@ import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 
 @Controller
@@ -103,18 +102,6 @@ public class TransactionController {
     }
 
     /**
-     * Retrieves all transactions for a specific user.
-     * @param userId the user ID
-     * @return a list of transactions for the user
-     */
-    @GetMapping("/api/transactions/user/{userId}")
-    @ResponseBody
-    public ResponseEntity<List<Transaction>> getTransactionsByUser(@PathVariable Long userId) {
-        Optional<UserAccount> user = userAccountService.findById(userId);
-        return user.map(userAccount -> ResponseEntity.ok(transactionService.findByUser(userAccount))).orElseGet(() -> ResponseEntity.notFound().build());
-    }
-
-    /**
      * Retrieves all transactions sent by a specific user.
      * @param userId the user ID
      * @return a list of transactions sent by the user
@@ -122,8 +109,9 @@ public class TransactionController {
     @GetMapping("/api/transactions/sent/{userId}")
     @ResponseBody
     public ResponseEntity<List<Transaction>> getTransactionsBySender(@PathVariable Long userId) {
-        Optional<UserAccount> sender = userAccountService.findById(userId);
-        return sender.map(userAccount -> ResponseEntity.ok(transactionService.findBySender(userAccount))).orElseGet(() -> ResponseEntity.notFound().build());
+        return userAccountService.findById(userId)
+                .map(user -> ResponseEntity.ok(transactionService.findBySender(user)))
+                .orElse(ResponseEntity.notFound().build());
     }
 
     /**
@@ -134,8 +122,9 @@ public class TransactionController {
     @GetMapping("/api/transactions/received/{userId}")
     @ResponseBody
     public ResponseEntity<List<Transaction>> getTransactionsByReceiver(@PathVariable Long userId) {
-        Optional<UserAccount> receiver = userAccountService.findById(userId);
-        return receiver.map(userAccount -> ResponseEntity.ok(transactionService.findByReceiver(userAccount))).orElseGet(() -> ResponseEntity.notFound().build());
+        return userAccountService.findById(userId)
+                .map(user -> ResponseEntity.ok(transactionService.findByReceiver(user)))
+                .orElse(ResponseEntity.notFound().build());
     }
 
     /**

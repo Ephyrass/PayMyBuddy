@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 import java.util.List;
 
-
 @RestController
 @RequestMapping("/api/billings")
 public class BillingController {
@@ -69,6 +68,11 @@ public class BillingController {
         return ResponseEntity.ok(billingService.findByDateBetween(start, end));
     }
 
+    /**
+     * Retrieves billings by transaction ID.
+     * @param transactionId the transaction ID
+     * @return a list of billings for the given transaction or 404 if transaction not found
+     */
     @GetMapping("/transaction/{transactionId}")
     public ResponseEntity<List<Billing>> getBillingsByTransaction(@PathVariable Long transactionId) {
         return transactionService.findById(transactionId)
