@@ -6,9 +6,6 @@ import com.PayMyBuddy.service.TransactionService;
 import com.PayMyBuddy.service.UserAccountService;
 import com.PayMyBuddy.util.AuthenticationUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -16,9 +13,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 @Controller
@@ -36,6 +30,52 @@ public class UserAccountController {
         this.connectionService = connectionService;
         this.transactionService = transactionService;
         this.authenticationUtils = authenticationUtils;
+    }
+
+    /**
+     * Displays the home page or redirects authenticated users to the dashboard.
+     * @return the name of the view to display
+     */
+    @GetMapping("/")
+    public String index() {
+        // If the user is already authenticated, redirect them to the dashboard
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated() && !auth.getName().equals("anonymousUser")) {
+            return "redirect:/dashboard";
+        }
+        // Otherwise, display the home page
+        return "index";
+    }
+
+    /**
+     * Displays the login page.
+     * @return the login view name
+     */
+    @GetMapping("/login")
+    public String loginPage() {
+        return "login";
+    }
+
+    /**
+     * Displays the registration page.
+     * @param model the model to add attributes to
+     * @return the register view name
+     */
+    @GetMapping("/register")
+    public String registerPage(Model model) {
+        model.addAttribute("user", new UserAccount());
+        return "register";
+    }
+
+    /**
+     * Handles user registration.
+     * @param user the user to register
+     * @return redirect to dashboard after registration
+     */
+    @PostMapping("/register")
+    public String registerUser(@ModelAttribute("user") UserAccount user) {
+        userAccountService.register(user);
+        return "redirect:/dashboard";
     }
 
     /**
@@ -136,95 +176,6 @@ public class UserAccountController {
             return "redirect:/profile?success=password_changed";
         } catch (Exception e) {
             return "redirect:/profile?error=password_change_failed";
-        }
-    }
-
-    /**
-     * Retrieves all user accounts.
-     * @return a list of all users
-     */
-    @GetMapping("/api/users")
-    @ResponseBody
-    public ResponseEntity<List<UserAccount>> getAllUsers() {
-        return ResponseEntity.ok(userAccountService.findAll());
-    }
-
-    /**
-     * Retrieves a user account by its ID.
-     * @param id the user ID
-     * @return the user account or 404 if not found
-     */
-    @GetMapping("/api/users/{id}")
-    @ResponseBody
-    public ResponseEntity<UserAccount> getUserById(@PathVariable Long id) {
-        return userAccountService.findById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
-    }
-
-    /**
-     * Registers a new user account.
-     * @param user the user to register
-     * @return the registered user or an error message
-     */
-    @PostMapping("/api/users/register")
-    @ResponseBody
-    public ResponseEntity<?> registerUser(@RequestBody UserAccount user) {
-        try {
-            UserAccount registeredUser = userAccountService.register(user);
-            return ResponseEntity.status(HttpStatus.CREATED).body(registeredUser);
-        } catch (IllegalArgumentException e) {
-            Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("error", e.getMessage());
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
-        } catch (DataIntegrityViolationException e) {
-            Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("error", "A user with this email address already exists");
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
-        } catch (Exception e) {
-            Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("error", "An error occurred during registration: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
-        }
-    }
-
-    /**
-     * Updates an existing user account.
-     * @param id the user ID
-     * @param user the user data to update
-     * @return the updated user or 404 if not found
-     */
-    @PutMapping("/api/users/{id}")
-    @ResponseBody
-    public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody UserAccount user) {
-        try {
-            return userAccountService.findById(id)
-                    .map(existingUser -> {
-                        user.setId(id);
-                        UserAccount updatedUser = userAccountService.save(user);
-                        return ResponseEntity.ok(updatedUser);
-                    })
-                    .orElse(ResponseEntity.notFound().build());
-        } catch (DataIntegrityViolationException e) {
-            Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("error", "A user with this email address already exists");
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
-        }
-    }
-
-    /**
-     * Deletes a user account by its ID.
-     * @param id the user ID
-     * @return 204 No Content if deleted, 404 if not found
-     */
-    @DeleteMapping("/api/users/{id}")
-    @ResponseBody
-    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
-        if (userAccountService.findById(id).isPresent()) {
-            userAccountService.delete(id);
-            return ResponseEntity.noContent().build();
-        } else {
-            return ResponseEntity.notFound().build();
         }
     }
 }

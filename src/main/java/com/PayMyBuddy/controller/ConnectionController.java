@@ -1,19 +1,13 @@
 package com.PayMyBuddy.controller;
 
-import com.PayMyBuddy.model.Connection;
 import com.PayMyBuddy.model.UserAccount;
 import com.PayMyBuddy.service.ConnectionService;
 import com.PayMyBuddy.service.UserAccountService;
 import com.PayMyBuddy.util.AuthenticationUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
-import java.util.Map;
 
 @Controller
 public class ConnectionController {
@@ -98,108 +92,6 @@ public class ConnectionController {
         } catch (IllegalArgumentException e) {
             String errorMessage = java.net.URLEncoder.encode(e.getMessage(), java.nio.charset.StandardCharsets.UTF_8);
             return "redirect:/connections?error=" + errorMessage;
-        }
-    }
-
-    /**
-     * Retrieves all connections.
-     *
-     * @return a list of all connections
-     */
-    @GetMapping("/api/connections")
-    @ResponseBody
-    public ResponseEntity<List<Connection>> getAllConnections() {
-        return ResponseEntity.ok(connectionService.findAll());
-    }
-
-    /**
-     * Retrieves all connections for a specific user.
-     *
-     * @param userId the user ID
-     * @return a list of connections for the user
-     */
-    @GetMapping("/api/connections/user/{userId}")
-    @ResponseBody
-    public ResponseEntity<List<Connection>> getConnectionsByUser(@PathVariable Long userId) {
-        return ResponseEntity.ok(connectionService.findByOwnerId(userId));
-    }
-
-    /**
-     * Retrieves a connection by its ID.
-     *
-     * @param id the connection ID
-     * @return the connection or 404 if not found
-     */
-    @GetMapping("/api/connections/{id}")
-    @ResponseBody
-    public ResponseEntity<Connection> getConnectionById(@PathVariable Long id) {
-        return connectionService.findById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
-    }
-
-    /**
-     * Creates a new connection between two users.
-     *
-     * @param payload a map containing ownerId and friendId
-     * @return the created connection or an error message
-     */
-    @PostMapping("/api/connections")
-    @ResponseBody
-    public ResponseEntity<Connection> createConnection(@RequestBody Map<String, Long> payload) {
-        try {
-            Long ownerId = payload.get("ownerId");
-            Long friendId = payload.get("friendId");
-
-            if (ownerId == null || friendId == null) {
-                return ResponseEntity.badRequest().build();
-            }
-
-            Connection connection = connectionService.createConnection(ownerId, friendId);
-            return ResponseEntity.status(HttpStatus.CREATED).body(connection);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
-        }
-    }
-
-    /**
-     * Deletes a connection by its ID.
-     *
-     * @param id the connection ID
-     * @return 204 No Content if deleted, 404 if not found
-     */
-    @DeleteMapping("/api/connections/{id}")
-    @ResponseBody
-    public ResponseEntity<Void> deleteConnectionApi(@PathVariable Long id) {
-        try {
-            connectionService.deleteConnection(id);
-            return ResponseEntity.noContent().build();
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.notFound().build();
-        }
-    }
-
-    /**
-     * Deletes a connection between two users.
-     *
-     * @param payload a map containing ownerId and friendId
-     * @return 204 No Content if deleted, 404 if not found
-     */
-    @DeleteMapping("/api/connections")
-    @ResponseBody
-    public ResponseEntity<Void> deleteConnectionBetweenUsers(@RequestBody Map<String, Long> payload) {
-        try {
-            Long ownerId = payload.get("ownerId");
-            Long friendId = payload.get("friendId");
-
-            if (ownerId == null || friendId == null) {
-                return ResponseEntity.badRequest().build();
-            }
-
-            connectionService.deleteConnectionBetweenUsers(ownerId, friendId);
-            return ResponseEntity.noContent().build();
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.notFound().build();
         }
     }
 }
