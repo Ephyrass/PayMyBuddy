@@ -1,107 +1,62 @@
 package com.PayMyBuddy.controller;
 
 import com.PayMyBuddy.model.Billing;
+import com.PayMyBuddy.model.UserAccount;
 import com.PayMyBuddy.service.BillingService;
 import com.PayMyBuddy.service.TransactionService;
+import com.PayMyBuddy.util.AuthenticationUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
-@RestController
-@RequestMapping("/api/billings")
+@Controller
 public class BillingController {
 
     private final BillingService billingService;
     private final TransactionService transactionService;
+    private final AuthenticationUtils authenticationUtils;
 
     @Autowired
-    public BillingController(BillingService billingService, TransactionService transactionService) {
+    public BillingController(BillingService billingService, TransactionService transactionService, AuthenticationUtils authenticationUtils) {
         this.billingService = billingService;
         this.transactionService = transactionService;
+        this.authenticationUtils = authenticationUtils;
     }
 
     /**
-     * Retrieves all billings.
-     * @return a list of all billings
+     * Displays the billings page for the authenticated user.
+     * @param model the model to add attributes to
+     * @return the billings view name
      */
-    @GetMapping
-    public ResponseEntity<List<Billing>> getAllBillings() {
-        return ResponseEntity.ok(billingService.findAll());
+    @GetMapping("/billings")
+    public String billingsPage(Model model) {
+        UserAccount user = authenticationUtils.getCurrentUser();
+
+        // Get all billings (for now, we'll show all billings)
+        List<Billing> allBillings = billingService.findAll();
+
+        model.addAttribute("user", user);
+        model.addAttribute("billings", allBillings);
+
+        return "billings";
     }
 
     /**
-     * Retrieves a billing by its ID.
+     * Handles marking a billing as processed.
      * @param id the billing ID
-     * @return the billing or 404 if not found
+     * @return redirect to billings page with success or error message
      */
-    @GetMapping("/{id}")
-    public ResponseEntity<Billing> getBillingById(@PathVariable Long id) {
-        return billingService.findById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
-    }
-
-    /**
-     * Retrieves billings by processed status.
-     * @param processed the processed status
-     * @return a list of billings with the given processed status
-     */
-    @GetMapping("/processed/{processed}")
-    public ResponseEntity<List<Billing>> getBillingsByProcessedStatus(@PathVariable Boolean processed) {
-        return ResponseEntity.ok(billingService.findByProcessed(processed));
-    }
-
-    /**
-     * Retrieves billings between two dates.
-     * @param start the start date
-     * @param end the end date
-     * @return a list of billings between the given dates
-     */
-    @GetMapping("/date-range")
-    public ResponseEntity<List<Billing>> getBillingsBetweenDates(
-            @RequestParam("start") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime start,
-            @RequestParam("end") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime end) {
-        return ResponseEntity.ok(billingService.findByDateBetween(start, end));
-    }
-
-    /**
-     * Retrieves billings by transaction ID.
-     * @param transactionId the transaction ID
-     * @return a list of billings for the given transaction or 404 if transaction not found
-     */
-    @GetMapping("/transaction/{transactionId}")
-    public ResponseEntity<List<Billing>> getBillingsByTransaction(@PathVariable Long transactionId) {
-        return transactionService.findById(transactionId)
-                .map(transaction -> ResponseEntity.ok(billingService.findByTransaction(transaction)))
-                .orElse(ResponseEntity.notFound().build());
-    }
-
-    /**
-     * Marks a billing as processed.
-     * @param id the billing ID
-     * @return the processed billing or 404 if not found
-     */
-    @PostMapping("/{id}/process")
-    public ResponseEntity<Billing> markBillingAsProcessed(@PathVariable Long id) {
+    @PostMapping("/billings/{id}/process")
+    public String markBillingAsProcessed(@PathVariable Long id) {
         try {
-            Billing processedBilling = billingService.markAsProcessed(id);
-            return ResponseEntity.ok(processedBilling);
+            billingService.markAsProcessed(id);
+            return "redirect:/billings?success=processed";
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.notFound().build();
+            String errorMessage = java.net.URLEncoder.encode(e.getMessage(), java.nio.charset.StandardCharsets.UTF_8);
+            return "redirect:/billings?error=" + errorMessage;
         }
-    }
-
-    /**
-     * Processes all unprocessed billings.
-     * @return a list of processed billings
-     */
-    @PostMapping("/process-all")
-    public ResponseEntity<List<Billing>> processAllUnprocessedBillings() {
-        List<Billing> processedBillings = billingService.processUnprocessedBillings();
-        return ResponseEntity.ok(processedBillings);
     }
 }

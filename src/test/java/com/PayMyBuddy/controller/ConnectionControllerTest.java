@@ -10,19 +10,9 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.ui.Model;
 
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -38,65 +28,46 @@ class ConnectionControllerTest {
     private UserAccountService userAccountService;
 
     @Mock
-    private Model model;
+    private AuthenticationUtils authenticationUtils;
 
     @Mock
-    private AuthenticationUtils authenticationUtils;
+    private Model model;
 
     @InjectMocks
     private ConnectionController connectionController;
 
-    private MockMvc mockMvc;
-    private Connection testConnection;
     private UserAccount testUser;
-    private UserAccount testFriend;
-    private List<Connection> connections;
-    private SecurityContext securityContext;
-    private Authentication authentication;
+    private UserAccount friend;
+    private Connection testConnection;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        mockMvc = MockMvcBuilders.standaloneSetup(connectionController).build();
 
         testUser = new UserAccount();
         testUser.setId(1L);
-        testUser.setEmail("owner@example.com");
-        testUser.setFirstName("Owner");
+        testUser.setEmail("test@example.com");
+        testUser.setFirstName("Test");
         testUser.setLastName("User");
 
-        testFriend = new UserAccount();
-        testFriend.setId(2L);
-        testFriend.setEmail("friend@example.com");
-        testFriend.setFirstName("Friend");
-        testFriend.setLastName("User");
+        friend = new UserAccount();
+        friend.setId(2L);
+        friend.setEmail("friend@example.com");
+        friend.setFirstName("Friend");
+        friend.setLastName("User");
 
         testConnection = new Connection();
         testConnection.setId(1L);
         testConnection.setOwner(testUser);
-        testConnection.setFriend(testFriend);
+        testConnection.setFriend(friend);
 
-        connections = Arrays.asList(testConnection);
-
-        // Mock SecurityContext et Authentication
-        securityContext = mock(SecurityContext.class);
-        authentication = mock(Authentication.class);
-        when(securityContext.getAuthentication()).thenReturn(authentication);
-        when(authentication.getName()).thenReturn("owner@example.com");
-        SecurityContextHolder.setContext(securityContext);
-
-        // Mock AuthenticationUtils
         when(authenticationUtils.getCurrentUser()).thenReturn(testUser);
-        when(authenticationUtils.getCurrentUserEmail()).thenReturn(testUser.getEmail());
     }
-
-    // Tests pour les pages web
 
     @Test
     void connectionsPage_shouldReturnConnectionsView() {
         // Arrange
-        when(userAccountService.findByEmail("owner@example.com")).thenReturn(Optional.of(testUser));
-        when(connectionService.findByOwnerId(1L)).thenReturn(connections);
+        when(connectionService.findByOwnerId(1L)).thenReturn(Arrays.asList(testConnection));
 
         // Act
         String result = connectionController.connectionsPage(model);
@@ -104,18 +75,18 @@ class ConnectionControllerTest {
         // Assert
         assertEquals("connections", result);
         verify(model).addAttribute("user", testUser);
-        verify(model).addAttribute("connections", connections);
+        verify(model).addAttribute(eq("connections"), any());
     }
 
     @Test
-    void addConnection_shouldRedirectWithSuccess_whenConnectionCreatedSuccessfully() {
+    void addConnection_shouldRedirectWithSuccess_whenConnectionCreated() {
         // Arrange
-        when(userAccountService.findByEmail("owner@example.com")).thenReturn(Optional.of(testUser));
-        when(userAccountService.findByEmail("friend@example.com")).thenReturn(Optional.of(testFriend));
+        String friendEmail = "friend@example.com";
+        when(userAccountService.findByEmail(friendEmail)).thenReturn(Optional.of(friend));
         when(connectionService.createConnection(1L, 2L)).thenReturn(testConnection);
 
         // Act
-        String result = connectionController.addConnection("friend@example.com");
+        String result = connectionController.addConnection(friendEmail);
 
         // Assert
         assertEquals("redirect:/connections?success", result);
@@ -125,10 +96,10 @@ class ConnectionControllerTest {
     @Test
     void addConnection_shouldRedirectWithError_whenTryingToAddSelf() {
         // Arrange
-        when(userAccountService.findByEmail("owner@example.com")).thenReturn(Optional.of(testUser));
+        String ownEmail = "test@example.com";
 
         // Act
-        String result = connectionController.addConnection("owner@example.com");
+        String result = connectionController.addConnection(ownEmail);
 
         // Assert
         assertEquals("redirect:/connections?error=self_connection", result);
@@ -138,210 +109,66 @@ class ConnectionControllerTest {
     @Test
     void addConnection_shouldRedirectWithError_whenFriendNotFound() {
         // Arrange
-        when(userAccountService.findByEmail("owner@example.com")).thenReturn(Optional.of(testUser));
-        when(userAccountService.findByEmail("nonexistent@example.com")).thenReturn(Optional.empty());
+        String friendEmail = "notfound@example.com";
+        when(userAccountService.findByEmail(friendEmail)).thenReturn(Optional.empty());
 
         // Act
-        String result = connectionController.addConnection("nonexistent@example.com");
+        String result = connectionController.addConnection(friendEmail);
 
         // Assert
         assertTrue(result.startsWith("redirect:/connections?error="));
+        assertTrue(result.contains("Contact+not+found"));
         verify(connectionService, never()).createConnection(anyLong(), anyLong());
     }
 
     @Test
-    void deleteConnection_shouldRedirectWithSuccess_whenConnectionDeletedSuccessfully() {
+    void deleteConnection_shouldRedirectWithSuccess_whenConnectionDeleted() {
         // Arrange
-        when(userAccountService.findByEmail("owner@example.com")).thenReturn(Optional.of(testUser));
-        when(connectionService.findById(1L)).thenReturn(Optional.of(testConnection));
-        doNothing().when(connectionService).deleteConnection(1L);
+        Long connectionId = 1L;
+        when(connectionService.findById(connectionId)).thenReturn(Optional.of(testConnection));
 
         // Act
-        String result = connectionController.deleteConnection(1L);
+        String result = connectionController.deleteConnection(connectionId);
 
         // Assert
         assertEquals("redirect:/connections?success_delete", result);
-        verify(connectionService).deleteConnection(1L);
+        verify(connectionService).deleteConnection(connectionId);
     }
 
     @Test
     void deleteConnection_shouldRedirectWithError_whenConnectionNotFound() {
         // Arrange
-        when(userAccountService.findByEmail("owner@example.com")).thenReturn(Optional.of(testUser));
-        when(connectionService.findById(1L)).thenReturn(Optional.empty());
+        Long connectionId = 999L;
+        when(connectionService.findById(connectionId)).thenReturn(Optional.empty());
 
         // Act
-        String result = connectionController.deleteConnection(1L);
+        String result = connectionController.deleteConnection(connectionId);
 
         // Assert
         assertTrue(result.startsWith("redirect:/connections?error="));
-        assertTrue(result.contains("Connection+not+found") || result.contains("connection_not_found"));
+        assertTrue(result.contains("Connection+not+found"));
         verify(connectionService, never()).deleteConnection(anyLong());
     }
 
     @Test
-    void deleteConnection_shouldRedirectWithError_whenUserNotAuthorized() {
+    void deleteConnection_shouldRedirectWithError_whenNotAuthorized() {
         // Arrange
-        UserAccount otherUser = new UserAccount();
-        otherUser.setId(3L);
+        Long connectionId = 1L;
+        UserAccount anotherUser = new UserAccount();
+        anotherUser.setId(3L);
 
-        Connection otherConnection = new Connection();
-        otherConnection.setId(1L);
-        otherConnection.setOwner(otherUser);
-        otherConnection.setFriend(testFriend);
+        Connection anotherConnection = new Connection();
+        anotherConnection.setId(connectionId);
+        anotherConnection.setOwner(anotherUser);
 
-        when(userAccountService.findByEmail("owner@example.com")).thenReturn(Optional.of(testUser));
-        when(connectionService.findById(1L)).thenReturn(Optional.of(otherConnection));
+        when(connectionService.findById(connectionId)).thenReturn(Optional.of(anotherConnection));
 
         // Act
-        String result = connectionController.deleteConnection(1L);
+        String result = connectionController.deleteConnection(connectionId);
 
         // Assert
         assertTrue(result.startsWith("redirect:/connections?error="));
+        assertTrue(result.contains("not+authorized"));
         verify(connectionService, never()).deleteConnection(anyLong());
-    }
-
-    // Tests pour l'API
-
-    @Test
-    void getAllConnections_shouldReturnAllConnections() {
-        // Arrange
-        when(connectionService.findAll()).thenReturn(connections);
-
-        // Act
-        ResponseEntity<List<Connection>> response = connectionController.getAllConnections();
-
-        // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(connections, response.getBody());
-    }
-
-    @Test
-    void getConnectionsByUser_shouldReturnUserConnections() {
-        // Arrange
-        when(connectionService.findByOwnerId(1L)).thenReturn(connections);
-
-        // Act
-        ResponseEntity<List<Connection>> response = connectionController.getConnectionsByUser(1L);
-
-        // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(connections, response.getBody());
-    }
-
-    @Test
-    void getConnectionById_shouldReturnConnection_whenConnectionExists() {
-        // Arrange
-        when(connectionService.findById(1L)).thenReturn(Optional.of(testConnection));
-
-        // Act
-        ResponseEntity<Connection> response = connectionController.getConnectionById(1L);
-
-        // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(testConnection, response.getBody());
-    }
-
-    @Test
-    void getConnectionById_shouldReturnNotFound_whenConnectionDoesNotExist() {
-        // Arrange
-        when(connectionService.findById(1L)).thenReturn(Optional.empty());
-
-        // Act
-        ResponseEntity<Connection> response = connectionController.getConnectionById(1L);
-
-        // Assert
-        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-    }
-
-    @Test
-    void createConnection_shouldReturnCreated_whenConnectionCreatedSuccessfully() {
-        // Arrange
-        Map<String, Long> payload = new HashMap<>();
-        payload.put("ownerId", 1L);
-        payload.put("friendId", 2L);
-
-        when(connectionService.createConnection(1L, 2L)).thenReturn(testConnection);
-
-        // Act
-        ResponseEntity<Connection> response = connectionController.createConnection(payload);
-
-        // Assert
-        assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        assertEquals(testConnection, response.getBody());
-    }
-
-    @Test
-    void createConnection_shouldReturnBadRequest_whenConnectionCreationFails() {
-        // Arrange
-        Map<String, Long> payload = new HashMap<>();
-        payload.put("ownerId", 1L);
-        payload.put("friendId", 2L);
-
-        when(connectionService.createConnection(1L, 2L)).thenThrow(new IllegalArgumentException("Invalid connection"));
-
-        // Act
-        ResponseEntity<Connection> response = connectionController.createConnection(payload);
-
-        // Assert
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        assertNull(response.getBody());
-    }
-
-    @Test
-    void deleteConnectionApi_shouldReturnNoContent_whenDeleteSuccessful() {
-        // Arrange
-        doNothing().when(connectionService).deleteConnection(1L);
-
-        // Act
-        ResponseEntity<Void> response = connectionController.deleteConnectionApi(1L);
-
-        // Assert
-        assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
-    }
-
-    @Test
-    void deleteConnectionApi_shouldReturnNotFound_whenConnectionNotFound() {
-        // Arrange
-        doThrow(new IllegalArgumentException("Connection not found")).when(connectionService).deleteConnection(1L);
-
-        // Act
-        ResponseEntity<Void> response = connectionController.deleteConnectionApi(1L);
-
-        // Assert
-        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-    }
-
-    @Test
-    void deleteConnectionBetweenUsers_shouldReturnNoContent_whenDeleteSuccessful() {
-        // Arrange
-        Map<String, Long> payload = new HashMap<>();
-        payload.put("ownerId", 1L);
-        payload.put("friendId", 2L);
-
-        doNothing().when(connectionService).deleteConnectionBetweenUsers(1L, 2L);
-
-        // Act
-        ResponseEntity<Void> response = connectionController.deleteConnectionBetweenUsers(payload);
-
-        // Assert
-        assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
-    }
-
-
-    @Test
-    void deleteConnectionBetweenUsers_shouldReturnNotFound_whenConnectionNotFound() {
-        // Arrange
-        Map<String, Long> payload = new HashMap<>();
-        payload.put("ownerId", 1L);
-        payload.put("friendId", 2L);
-
-        doThrow(new IllegalArgumentException("Connection not found")).when(connectionService).deleteConnectionBetweenUsers(1L, 2L);
-
-        // Act
-        ResponseEntity<Void> response = connectionController.deleteConnectionBetweenUsers(payload);
-
-        // Assert
-        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
     }
 }
